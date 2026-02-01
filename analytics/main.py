@@ -4,7 +4,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 
 # Configurações (No futuro usaremos Variáveis de Ambiente)
 url = "http://influxdb:8086"
-token = "SEU_TOKEN_GIGANTE_DO_INFLUXDB"
+token = "uvfg4ovhrAdZ98DldpfBqkCmQn2Z970Bf2D8q6shEvI2zSUI0KilKpfMGa0IsdC8hFHWfkUFozY3f_lsrGdeAA=="
 org = "mov_industria"
 bucket = "mov_dados"
 

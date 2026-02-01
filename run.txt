@@ -1,0 +1,57 @@
+Opção 1: "Desligar o Computador" (Parar tudo) 🛑
+Se você acabou por hoje e quer liberar memória do seu PC:
+
+cd ~/mov-platform
+sudo docker compose stop
+
+O que faz: Apenas congela os containers.
+
+Vantagem: É super rápido para ligar de novo depois.
+
+
+
+
+Opção 2: "Desmontar o Circo" (Parar e remover) 🧹
+Se você quer limpar tudo para deixar organizado (o mais comum):
+
+cd ~/mov-platform
+sudo docker compose down
+
+O que faz: Para os containers e remove a "rede virtual" que o Docker criou.
+
+IMPORTANTE: Você NÃO PERDE seus dados (dashboards, usuários, histórico de temperatura). Tudo isso está salvo naquelas pastas data que configuramos nos Volumes. Pode rodar sem medo.
+
+Isso mesmo! Mas tem um detalhe importante: como rodamos com o -d (detached), fechar a janela do terminal NÃO para a aplicação. Ela continua rodando em segundo plano "para sempre".
+
+Para parar de verdade, você tem duas opções, dependendo do que você quer:
+
+Opção 1: "Desligar o Computador" (Parar tudo) 🛑
+Se você acabou por hoje e quer liberar memória do seu PC:
+
+Bash
+
+cd ~/mov-platform
+sudo docker compose stop
+O que faz: Apenas congela os containers.
+
+Vantagem: É super rápido para ligar de novo depois.
+
+Opção 2: "Desmontar o Circo" (Parar e remover) 🧹
+Se você quer limpar tudo para deixar organizado (o mais comum):
+
+Bash
+
+cd ~/mov-platform
+sudo docker compose down
+O que faz: Para os containers e remove a "rede virtual" que o Docker criou.
+
+IMPORTANTE: Você NÃO PERDE seus dados (dashboards, usuários, histórico de temperatura). Tudo isso está salvo naquelas pastas data que configuramos nos Volumes. Pode rodar sem medo.
+
+
+
+Para ligar de novo amanhã? ☀️
+É só rodar o clássico:
+
+sudo docker compose up -d
+
+E tudo volta magicamente como estava, com seus gráficos e dados lá.

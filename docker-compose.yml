@@ -36,7 +36,7 @@ services:
       - mosquitto
       - influxdb
 
-  # 4. VISUALIZAÇÃO (NOVO!)
+  # 4. VISUALIZAÇÃO
   grafana:
     image: grafana/grafana:latest
     container_name: mov_grafana
