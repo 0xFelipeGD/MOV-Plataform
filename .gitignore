@@ -1,0 +1,10 @@
+# Ignorar dados do banco e logs
+influxdb/data/
+influxdb/config/
+mosquitto/data/
+mosquitto/log/
+grafana/data/
+__pycache__/
+
+# Ignorar arquivos de sistema
+.DS_Store

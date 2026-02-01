@@ -1,0 +1,57 @@
+version: "3.7"
+
+services:
+  # 1. BROKER MQTT
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mov_broker
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+
+  # 2. BANCO DE DADOS
+  influxdb:
+    image: influxdb:2
+    container_name: mov_influx
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./influxdb/data:/var/lib/influxdb2
+      - ./influxdb/config:/etc/influxdb2
+
+  # 3. COLETOR TELEGRAF
+  telegraf:
+    image: telegraf:latest
+    container_name: mov_telegraf
+    restart: unless-stopped
+    volumes:
+      - ./telegraf/config/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    depends_on:
+      - mosquitto
+      - influxdb
+
+  # 4. VISUALIZAÇÃO (NOVO!)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mov_grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+    depends_on:
+      - influxdb
+
+  # 5. ANALYTICS (PYTHON)
+  analytics:
+    build: ./analytics
+    container_name: mov_analytics
+    restart: unless-stopped
+    depends_on:
+      - influxdb
