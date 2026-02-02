@@ -83,21 +83,41 @@ ls -la
 
 Você deve ver: `docker-compose.yml`, `scripts/`, `nginx/`, etc.
 
+**Importante:** Verifique se todos os scripts têm permissão de execução:
+
+```bash
+chmod +x scripts/*.sh
+chmod +x mosquitto/docker-entrypoint.sh
+```
+
 ---
 
-### **PASSO 3: Gerar credenciais (SENHAS)**
+### **PASSO 3: Executar setup automático**
 
 Na VPS:
 
 ```bash
-bash scripts/generate_credentials.sh > .env
+chmod +x scripts/setup.sh
+./scripts/setup.sh
 ```
 
 **O que isso faz:**
 
-- Gera senhas aleatórias e fortes
+- Cria estrutura de diretórios necessária
+- Gera senhas aleatórias e fortes automaticamente
 - Salva tudo no arquivo `.env`
+- Configura permissões corretas
 - Você NÃO precisa criar senhas manualmente
+
+**Alternativa (manual):**
+
+```bash
+# Se preferir gerar apenas as credenciais
+bash scripts/generate_credentials.sh > .env
+
+# E criar diretórios manualmente
+mkdir -p mosquitto/{config,data,log} influxdb/config backups
+```
 
 **Veja as senhas geradas:**
 

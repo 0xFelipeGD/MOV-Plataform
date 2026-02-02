@@ -4,7 +4,7 @@ services:
     image: eclipse-mosquitto:2
     container_name: mov_broker
     restart: unless-stopped
-    user: "1883:1883" # UID/GID do mosquitto
+    user: "1883:1883" # UID/GID do mosquitto (segurança)
     ports:
       - "1883:1883"
       - "9001:9001"
@@ -26,7 +26,7 @@ services:
     image: influxdb:2
     container_name: mov_influx
     restart: unless-stopped
-    user: "1000:1000" # UID/GID padrão do influxdb
+    user: "1000:1000" # UID/GID do influxdb (segurança)
     ports:
       - "8086:8086"
     volumes:

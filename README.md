@@ -2,8 +2,22 @@
 
 Uma plataforma completa de monitoramento industrial baseada em IoT, utilizando MQTT, InfluxDB, Telegraf, Grafana e Analytics com Python.
 
+## ⚡ Início Rápido (3 comandos!)
+
+```bash
+git clone <seu-repositorio> && cd MOV-Plataform
+chmod +x scripts/setup.sh && ./scripts/setup.sh
+docker compose up -d
+```
+
+**Pronto!** Acesse: http://localhost:3000 (Grafana) | http://localhost:8086 (InfluxDB)  
+_Credenciais geradas automaticamente estão no arquivo `.env`_
+
+---
+
 ## 📋 Índice
 
+- [Início Rápido](#-início-rápido-3-comandos)
 - [Sobre o Projeto](#sobre-o-projeto)
 - [Arquitetura](#arquitetura)
 - [Pré-requisitos](#pré-requisitos)
@@ -64,16 +78,51 @@ A **MOV Platform** é uma solução completa para monitoramento de dados industr
 
 ## 📦 Instalação
 
-### 1. Clone o repositório
+### Instalação Rápida (Recomendado)
+
+```bash
+# 1. Clone o repositório
+git clone <seu-repositorio>
+cd MOV-Plataform
+
+# 2. Execute o script de setup (cria estrutura e gera credenciais automaticamente)
+chmod +x scripts/setup.sh
+./scripts/setup.sh
+
+# 3. Inicie a plataforma
+docker compose up -d
+
+# 4. Verifique se está tudo rodando
+docker compose ps
+```
+
+**Pronto!** 🎉 A plataforma está funcionando. Acesse:
+
+- **Grafana**: http://localhost:3000 (usuário: admin, senha: no arquivo `.env`)
+- **InfluxDB**: http://localhost:8086
+- **MQTT**: localhost:1883
+
+---
+
+### Instalação Manual (Opcional)
+
+Se preferir configurar manualmente:
+
+#### 1. Clone o repositório
 
 ```bash
 git clone <seu-repositorio>
 cd MOV-Plataform
 ```
 
-### 2. Configure as variáveis de ambiente
+#### 2. Gere as credenciais automaticamente
 
-Crie um arquivo `.env` na raiz do projeto:
+```bash
+chmod +x scripts/generate_credentials.sh
+./scripts/generate_credentials.sh > .env
+```
+
+Ou crie manualmente o arquivo `.env`:
 
 ```env
 # MQTT Credentials
@@ -82,8 +131,7 @@ MQTT_PASSWORD=sua_senha
 
 # InfluxDB Configuration
 INFLUX_USER=admin
-# 8 caracteres pelo menos
-INFLUX_PASSWORD=sua_senha_influx
+INFLUX_PASSWORD=sua_senha_influx  # Mínimo 8 caracteres
 INFLUX_ORG=mov_industria
 INFLUX_BUCKET=mov_dados
 INFLUX_TOKEN=seu_token_aqui
@@ -92,10 +140,16 @@ INFLUX_TOKEN=seu_token_aqui
 GRAFANA_PASSWORD=sua_senha_grafana
 ```
 
-### 3. Inicie a plataforma
+#### 3. Crie a estrutura de diretórios
 
 ```bash
-sudo docker compose up -d
+mkdir -p mosquitto/{config,data,log} influxdb/config backups
+```
+
+#### 4. Inicie a plataforma
+
+```bash
+docker compose up -d
 ```
 
 ## 🚀 Uso

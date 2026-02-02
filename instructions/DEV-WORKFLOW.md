@@ -79,13 +79,24 @@ telegraf/
 
 ---
 
-### **PASSO 3: Gerar credenciais locais**
+### **PASSO 3: Executar setup automático**
 
 ```bash
-# Gerar arquivo .env com senhas
-bash scripts/generate_credentials.sh > .env
+# Executar script de setup (cria estrutura e gera credenciais)
+chmod +x scripts/setup.sh
+./scripts/setup.sh
+```
 
-# Ver as credenciais geradas
+**O que o script faz:**
+
+- ✓ Cria estrutura de diretórios necessária
+- ✓ Gera arquivo .env com credenciais seguras automaticamente
+- ✓ Configura permissões de execução
+- ✓ Valida instalação do Docker
+
+**Ver as credenciais geradas:**
+
+```bash
 cat .env
 ```
 
@@ -197,6 +208,53 @@ docker compose restart telegraf
 
 # 4. Ver logs
 docker compose logs -f telegraf
+```
+
+---
+
+## 🔧 TROUBLESHOOTING
+
+### Erro de permissão no Mosquitto ou InfluxDB
+
+Se você ver erros como:
+
+- `Permission denied` ao criar arquivos
+- `touch: /mosquitto/config/passwd: Permission denied`
+- InfluxDB não consegue escrever configuração
+
+**Solução:**
+
+```bash
+# Execute o script de correção de permissões
+chmod +x scripts/fix_permissions.sh
+sudo ./scripts/fix_permissions.sh
+
+# Reinicie os containers
+docker compose restart
+```
+
+### Containers não iniciam após git clone
+
+**Causa:** Diretórios necessários não foram criados.
+
+**Solução:**
+
+```bash
+# Re-executar o setup
+./scripts/setup.sh
+docker compose up -d
+```
+
+### Container fica reiniciando (restart loop)
+
+```bash
+# Ver o que está acontecendo
+docker compose logs <nome-do-container>
+
+# Exemplos:
+docker compose logs mosquitto
+docker compose logs influxdb
+docker compose logs telegraf
 ```
 
 ---

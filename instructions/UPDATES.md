@@ -28,10 +28,20 @@ docker compose up -d --build
 docker compose logs analytics
 docker compose logs grafana
 
-# 4. Se tudo OK, commitar
+# 4. Verificar se não há erros de permissão
+docker compose ps  # Todos devem estar "Up" ou "Up (healthy)"
+
+# 5. Se tudo OK, commitar
 git add .
 git commit -m "feat: adiciona novo dashboard de temperatura"
 git push origin main
+```
+
+**💡 Dica:** Se após `git pull` em outra máquina os containers não iniciarem, execute:
+
+```bash
+./scripts/setup.sh  # Recria estrutura e credenciais se necessário
+docker compose up -d
 ```
 
 ---
