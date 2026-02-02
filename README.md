@@ -103,7 +103,6 @@ sudo docker compose up -d
 ### Iniciar a Plataforma
 
 ```bash
-cd ~/MOV-Plataform
 sudo docker compose up -d
 ```
 
@@ -128,7 +127,7 @@ sudo docker compose stop
 #### Opção 2: Parar e remover containers (recomendado)
 
 ```bash
-sudo docker compose down
+sudo docker compose down -v
 ```
 
 **O que faz:** Para os containers e remove a rede virtual criada pelo Docker.
