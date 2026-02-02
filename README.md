@@ -82,9 +82,11 @@ MQTT_PASSWORD=sua_senha
 
 # InfluxDB Configuration
 INFLUX_USER=admin
+# 8 caracteres pelo menos
 INFLUX_PASSWORD=sua_senha_influx
 INFLUX_ORG=mov_industria
 INFLUX_BUCKET=mov_dados
+# Pode gerar um novo Token com o comando no terminal "openssl rand -base64 32"
 INFLUX_TOKEN=seu_token_aqui
 
 # Grafana
