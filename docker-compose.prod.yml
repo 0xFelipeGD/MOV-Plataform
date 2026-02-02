@@ -31,6 +31,7 @@ services:
     image: nginx:alpine
     container_name: mov_nginx
     restart: unless-stopped
+    user: "101:101"  # UID/GID do nginx no Alpine
     ports:
       - "80:80" # HTTP (redireciona para HTTPS)
       - "443:443" # HTTPS
