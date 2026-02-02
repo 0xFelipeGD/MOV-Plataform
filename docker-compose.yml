@@ -37,10 +37,16 @@ services:
       - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_ORG}
       - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_BUCKET}
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # 3. COLETOR TELEGRAF
   telegraf:
-    image: telegraf:latest
+    image: telegraf:1.29
     container_name: mov_telegraf
     restart: unless-stopped
     volumes:
@@ -54,10 +60,16 @@ services:
     depends_on:
       - mosquitto
       - influxdb
+    healthcheck:
+      test: ["CMD", "telegraf", "--test"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # 4. VISUALIZAÇÃO
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.3.3
     container_name: mov_grafana
     restart: unless-stopped
     ports:
@@ -69,6 +81,16 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
     depends_on:
       - influxdb
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # 5. ANALYTICS (PYTHON)
   analytics:
@@ -85,7 +107,7 @@ services:
 
   # 6. SERVIÇO DE BACKUP AUTOMÁTICO
   backup_job:
-    image: alpine:latest
+    image: alpine:3.19
     container_name: mov_backup
     restart: unless-stopped
     depends_on:

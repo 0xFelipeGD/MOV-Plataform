@@ -1,12 +1,16 @@
 import time
+import os
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 
-# Configurações (No futuro usaremos Variáveis de Ambiente)
-url = "http://influxdb:8086"
-token = "uvfg4ovhrAdZ98DldpfBqkCmQn2Z970Bf2D8q6shEvI2zSUI0KilKpfMGa0IsdC8hFHWfkUFozY3f_lsrGdeAA=="
-org = "mov_industria"
-bucket = "mov_dados"
+# Configurações via Variáveis de Ambiente
+url = os.environ.get("INFLUX_URL", "http://influxdb:8086")
+token = os.environ.get("INFLUX_TOKEN")
+org = os.environ.get("INFLUX_ORG")
+bucket = os.environ.get("INFLUX_BUCKET")
+
+if not token:
+    raise ValueError("ERRO: INFLUX_TOKEN não definido nas variáveis de ambiente!")
 
 client = InfluxDBClient(url=url, token=token, org=org)
 write_api = client.write_api(write_options=SYNCHRONOUS)
