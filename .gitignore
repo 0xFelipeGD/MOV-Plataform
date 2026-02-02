@@ -3,8 +3,13 @@ influxdb/data/
 influxdb/config/
 mosquitto/data/
 mosquitto/log/
+mosquitto/config/passwd
 grafana/data/
 __pycache__/
+backups/
 
 # Ignorar arquivos de sistema
 .DS_Store
+
+# Ignorar arquivos de ambiente virtual
+.env

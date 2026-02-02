@@ -1,5 +1,3 @@
-version: "3.7"
-
 services:
   # 1. BROKER MQTT
   mosquitto:
@@ -13,6 +11,14 @@ services:
       - ./mosquitto/config:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
+      # Mapeia o script que você criou para dentro do container
+      - ./mosquitto/docker-entrypoint.sh:/docker-entrypoint.sh
+    environment:
+      # Passa as variáveis do .env para o script ler
+      - MQTT_USER=${MQTT_USER}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
+    # EXECUÇÃO: Usa o 'sh' para rodar o script (evita erro de permissão chmod)
+    entrypoint: ["sh", "/docker-entrypoint.sh"]
 
   # 2. BANCO DE DADOS
   influxdb:
@@ -22,8 +28,15 @@ services:
     ports:
       - "8086:8086"
     volumes:
-      - ./influxdb/data:/var/lib/influxdb2
+      - influxdb_data:/var/lib/influxdb2
       - ./influxdb/config:/etc/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUX_USER}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_BUCKET}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
 
   # 3. COLETOR TELEGRAF
   telegraf:
@@ -32,6 +45,12 @@ services:
     restart: unless-stopped
     volumes:
       - ./telegraf/config/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    environment:
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+      - INFLUX_ORG=${INFLUX_ORG}
+      - INFLUX_BUCKET=${INFLUX_BUCKET}
+      - MQTT_USER=${MQTT_USER}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
     depends_on:
       - mosquitto
       - influxdb
@@ -44,7 +63,10 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./grafana/data:/var/lib/grafana
+      - grafana_data:/var/lib/grafana
+      # - ./grafana/provisioning:/etc/grafana/provisioning (Descomente se tiver criado os arquivos)
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
     depends_on:
       - influxdb
 
@@ -53,5 +75,44 @@ services:
     build: ./analytics
     container_name: mov_analytics
     restart: unless-stopped
+    environment:
+      - INFLUX_URL=http://influxdb:8086
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+      - INFLUX_ORG=${INFLUX_ORG}
+      - INFLUX_BUCKET=${INFLUX_BUCKET}
     depends_on:
       - influxdb
+
+  # 6. SERVIÇO DE BACKUP AUTOMÁTICO
+  backup_job:
+    image: alpine:latest
+    container_name: mov_backup
+    restart: unless-stopped
+    depends_on:
+      - grafana
+      - influxdb
+    volumes:
+      - grafana_data:/input/grafana:ro
+      - influxdb_data:/input/influxdb:ro
+      - ./backups:/output
+    command: >
+      sh -c "apk add --no-cache tar &&
+      while true; do
+        DATE=$$(date +%Y%m%d_%H%M%S)
+        echo '--- Iniciando Backup [$$DATE] ---'
+        
+        echo 'Compactando Grafana...'
+        tar czf /output/grafana_$$DATE.tar.gz -C /input/grafana .
+        
+        echo 'Compactando InfluxDB...'
+        tar czf /output/influxdb_$$DATE.tar.gz -C /input/influxdb .
+        
+        find /output -name '*.tar.gz' -mtime +7 -exec rm {} \;
+        
+        echo 'Backup Concluido! Dormindo por 24h...'
+        sleep 86400
+      done"
+
+volumes:
+  grafana_data:
+  influxdb_data:
