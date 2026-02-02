@@ -1,0 +1,60 @@
+# Docker Compose - Configuração de Produção (VPS)
+# Este arquivo sobrescreve docker-compose.yml para ambiente de produção
+#
+# USO:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# SEGURANÇA:
+#   - Portas fechadas para localhost (exceto MQTT SSL)
+#   - Nginx como proxy reverso com SSL
+#   - Firewall configurado via scripts/setup_firewall.sh
+
+services:
+  # MQTT - Apenas SSL para conexões externas
+  mosquitto:
+    ports:
+      - "8883:8883" # MQTT com SSL - Node-RED e dispositivos IoT
+      # Porta 1883 (sem SSL) e 9001 (WebSocket) removidas
+
+  # InfluxDB - Fechado, acesso apenas via SSH tunnel
+  influxdb:
+    ports:
+      - "127.0.0.1:8086:8086"
+
+  # Grafana - Fechado, exposto via Nginx
+  grafana:
+    ports:
+      - "127.0.0.1:3000:3000"
+
+  # Nginx - Proxy reverso com SSL
+  nginx:
+    image: nginx:alpine
+    container_name: mov_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80" # HTTP (redireciona para HTTPS)
+      - "443:443" # HTTPS
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - default
+    depends_on:
+      - grafana
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# Mantém os volumes do docker-compose.yml base

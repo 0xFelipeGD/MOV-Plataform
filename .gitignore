@@ -6,8 +6,12 @@ mosquitto/log/
 mosquitto/config/passwd
 mosquitto/certs/*.key
 mosquitto/certs/*.pem
+mosquitto/certs/*.crt
+mosquitto/certs/*.csr
+mosquitto/certs/*.srl
 grafana/data/
 backups/
+backups/*.tar.gz
 
 # Variáveis de ambiente e credenciais
 .env
@@ -16,6 +20,11 @@ backups/
 *.key
 *.pem
 config/credentials.json
+.credentials_info.txt
+
+# Nginx SSL e logs
+nginx/ssl/
+nginx/logs/
 
 # Python
 __pycache__/
@@ -39,14 +48,18 @@ logs/
 .Trashes
 Thumbs.db
 
-# Docker volumes persistentes
+# Docker
 docker-compose.override.yml
+*.tar.gz
+
+# Arquivos temporários
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
 
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
-#Scripts generate_credentials.sh
-.credentials_info.txt
+*.iml
