@@ -4,7 +4,7 @@ services:
     image: eclipse-mosquitto:2
     container_name: mov_broker
     restart: unless-stopped
-    user: "1883:1883"  # UID/GID do mosquitto
+    user: "1883:1883" # UID/GID do mosquitto
     ports:
       - "1883:1883"
       - "9001:9001"
@@ -26,7 +26,7 @@ services:
     image: influxdb:2
     container_name: mov_influx
     restart: unless-stopped
-    user: "1000:1000"  # UID/GID padrão do influxdb
+    user: "1000:1000" # UID/GID padrão do influxdb
     ports:
       - "8086:8086"
     volumes:
@@ -51,7 +51,7 @@ services:
     image: telegraf:1.29
     container_name: mov_telegraf
     restart: unless-stopped
-    user: "999:999"  # UID/GID do telegraf
+    user: "999:999" # UID/GID do telegraf
     volumes:
       - ./telegraf/config/telegraf.conf:/etc/telegraf/telegraf.conf:ro
     environment:
@@ -75,7 +75,7 @@ services:
     image: grafana/grafana:10.3.3
     container_name: mov_grafana
     restart: unless-stopped
-    user: "472:472"  # UID/GID do grafana
+    user: "472:472" # UID/GID do grafana
     ports:
       - "3000:3000"
     volumes:
@@ -114,7 +114,6 @@ services:
     image: alpine:3.19
     container_name: mov_backup
     restart: unless-stopped
-    user: "1000:1000"  # UID/GID não-root para backup
     depends_on:
       - grafana
       - influxdb
@@ -134,7 +133,7 @@ services:
         echo 'Compactando InfluxDB...'
         tar czf /output/influxdb_$$DATE.tar.gz -C /input/influxdb .
         
-        find /output -name '*.tar.gz' -mtime +7 -exec rm {} \;
+        find /output -name '*.tar.gz' -mtime +7 -delete
         
         echo 'Backup Concluido! Dormindo por 24h...'
         sleep 86400
