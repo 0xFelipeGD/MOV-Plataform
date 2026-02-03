@@ -16,22 +16,18 @@ services:
       - "8883:8883" # MQTT com SSL - Node-RED e dispositivos IoT
       # Porta 1883 (sem SSL) e 9001 (WebSocket) removidas
 
-  # InfluxDB - Fechado, acesso apenas via SSH tunnel
-  influxdb:
-    ports:
-      - "127.0.0.1:8086:8086"
+  # InfluxDB - Sem portas expostas, acesso apenas interno
+  influxdb: {}
 
-  # Grafana - Fechado, exposto via Nginx
-  grafana:
-    ports:
-      - "127.0.0.1:3000:3000"
+  # Grafana - Sem portas expostas, acesso via Nginx
+  grafana: {}
 
   # Nginx - Proxy reverso com SSL
   nginx:
     image: nginx:alpine
     container_name: mov_nginx
     restart: unless-stopped
-    user: "101:101"  # UID/GID do nginx no Alpine
+    user: "101:101" # UID/GID do nginx no Alpine
     ports:
       - "80:80" # HTTP (redireciona para HTTPS)
       - "443:443" # HTTPS
