@@ -35,6 +35,8 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
+      # Mapeie as pastas do Let's Encrypt abaixo:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - default
     depends_on:

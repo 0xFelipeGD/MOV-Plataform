@@ -56,9 +56,6 @@ echo ""
 echo "[4/4] Gerando certificado SSL..."
 certbot certonly --standalone \
     -d $DOMAIN \
-    --non-interactive \
-    --agree-tos \
-    --email admin@$DOMAIN \
     --preferred-challenges http
 
 # Copiar certificados para pasta do projeto
@@ -74,8 +71,18 @@ echo ""
 
 # Atualizar configuração do Nginx
 echo "Atualizando nginx/conf.d/default.conf..."
-sed -i "s/# server_name grafana.seudominio.com/server_name $DOMAIN/" nginx/conf.d/default.conf
-echo "✅ Configuração atualizada"
+
+# Fazer backup
+cp nginx/conf.d/default.conf nginx/conf.d/default.conf.bak
+
+# Descomentar bloco de redirecionamento HTTP -> HTTPS
+sed -i 's/^# # Redireciona HTTP para HTTPS/# Redireciona HTTP para HTTPS/' nginx/conf.d/default.conf
+sed -i '/^# # Redireciona/,/^# }/ { /^# server {/,/^# }/ { s/^# //; s/grafana\.seudominio\.com/'"$DOMAIN"'/g; } }' nginx/conf.d/default.conf
+
+# Descomentar bloco HTTPS
+sed -i '/^# # Grafana - HTTPS/,/^# }$/ { s/^# //; s/grafana\.seudominio\.com/'"$DOMAIN"'/g; }' nginx/conf.d/default.conf
+
+echo "✓ Configuração atualizada (backup salvo)"
 echo ""
 
 # Reiniciar Nginx
@@ -86,6 +93,30 @@ echo ""
 
 # Configurar renovação automática de certificados HTTPS e MQTT
 echo "Configurando renovação automática..."
+
+# Hook para recarregar nginx após renovação
+HOOK_SCRIPT="/etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh"
+mkdir -p /etc/letsencrypt/renewal-hooks/deploy
+
+cat > "$HOOK_SCRIPT" <<'EOF'
+#!/bin/bash
+# Hook de renovação: copia certificados e reinicia Nginx
+
+PROJECT_DIR="/home/$(logname)/Desktop/MOV-Plataform"
+
+if [ -d "$PROJECT_DIR/nginx/ssl" ]; then
+    cp /etc/letsencrypt/live/*/fullchain.pem "$PROJECT_DIR/nginx/ssl/"
+    cp /etc/letsencrypt/live/*/privkey.pem "$PROJECT_DIR/nginx/ssl/"
+    chmod 644 "$PROJECT_DIR/nginx/ssl/fullchain.pem"
+    chmod 600 "$PROJECT_DIR/nginx/ssl/privkey.pem"
+    
+    cd "$PROJECT_DIR"
+    docker compose restart nginx
+fi
+EOF
+
+chmod +x "$HOOK_SCRIPT"
+echo "✓ Hook de renovação HTTPS criado"
 
 # Script de renovação de certificados MQTT
 cat > /usr/local/bin/renew_mqtt_certs.sh <<'MQTT_SCRIPT'
@@ -168,17 +199,17 @@ echo "[$(date)] Renovação de certificados MQTT concluída." >> $LOG_FILE
 MQTT_SCRIPT
 
 chmod +x /usr/local/bin/renew_mqtt_certs.sh
-echo "✅ Script de renovação MQTT criado"
+echo "✓ Script de renovação MQTT criado"
 
 # Adicionar cron jobs para renovação automática
 (crontab -l 2>/dev/null | grep -v "certbot renew" | grep -v "renew_mqtt_certs.sh"; \
- echo "# Renovação automática de certificados HTTPS (Let's Encrypt) - 3h da manhã"; \
- echo "0 3 * * * certbot renew --quiet --deploy-hook 'docker compose -f $PWD/docker-compose.yml -f $PWD/docker-compose.prod.yml restart nginx'"; \
+ echo "# Renovação automática de certificados HTTPS - 3h da manhã"; \
+ echo "0 3 * * * certbot renew --quiet"; \
  echo ""; \
  echo "# Renovação automática de certificados MQTT - 4h da manhã"; \
  echo "0 4 * * * /usr/local/bin/renew_mqtt_certs.sh") | crontab -
 
-echo "✅ Renovação automática configurada"
+echo "✓ Renovação automática configurada"
 echo "   - HTTPS: 3h da manhã (diária)"
 echo "   - MQTT: 4h da manhã (verifica e renova se < 30 dias)"
 echo ""
