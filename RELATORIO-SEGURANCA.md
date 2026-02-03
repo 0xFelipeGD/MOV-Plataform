@@ -81,7 +81,16 @@ A plataforma possui **scripts automatizados de segurança** que implementam boas
    - ✅ Hook de deploy: reinicia Nginx após renovação
    - ✅ Nginx como proxy reverso com SSL
 
-3. **Configurações Nginx Seguras**
+3. **Renovação Automática de Certificados MQTT** ⭐ _NOVO_
+   - ✅ Script `/usr/local/bin/renew_mqtt_certs.sh` criado automaticamente
+   - ✅ Verifica validade diariamente (4h da manhã)
+   - ✅ Renova certificados quando faltarem menos de 30 dias
+   - ✅ Faz backup dos certificados antigos antes de renovar
+   - ✅ Reinicia automaticamente o container Mosquitto após renovação
+   - ✅ Logging completo em `/var/log/mqtt_cert_renewal.log`
+   - ✅ Renovação manual disponível via comando
+
+4. **Configurações Nginx Seguras**
    - ✅ `server_tokens off` (oculta versão do Nginx)
    - ✅ Suporte a WebSocket seguro para Grafana Live
    - ✅ Headers de proxy corretos (X-Real-IP, X-Forwarded-For, X-Forwarded-Proto)
@@ -89,7 +98,7 @@ A plataforma possui **scripts automatizados de segurança** que implementam boas
    - ✅ Timeouts configurados (60s)
    - ✅ Gzip habilitado para otimização
 
-4. **Separação Clara Dev/Prod**
+5. **Separação Clara Dev/Prod**
    - ✅ Ambiente dev (`docker-compose.yml`): portas abertas para facilitar desenvolvimento local
    - ✅ Ambiente prod (`docker-compose.prod.yml`): apenas portas seguras expostas
    - ✅ Documentação completa (`instructions/DEPLOY.md`) explica quando usar cada configuração
@@ -100,7 +109,7 @@ A plataforma possui **scripts automatizados de segurança** que implementam boas
 | ---------- | ----------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | 🟡 MÉDIA   | Certificados MQTT em Produção | Certificados autoassinados são adequados para teste mas não ideais para produção | Para ambientes corporativos, considerar certificados de CA confiável (pode usar Let's Encrypt para MQTT também) |
 | 🟢 OK      | WebSocket em Dev              | Porta 9001 (WebSocket) sem SSL no `docker-compose.yml`                           | ✅ Aceitável - é apenas para dev local, e documentação instrui usar `prod.yml` em servidores                    |
-| 🟠 BAIXA   | Renovação Certificados MQTT   | Certificados MQTT com 365 dias, sem renovação automática                         | Documentar procedimento de renovação manual ou criar script (baixa prioridade - anual)                          |
+| � OK       | Renovação Certificados MQTT   | ✅ **IMPLEMENTADO:** Renovação automática integrada ao `setup_ssl.sh`            | Script renova automaticamente certificados MQTT quando faltarem menos de 30 dias para expirar                   |
 
 #### 📝 Nota Importante
 
@@ -222,7 +231,7 @@ chmod 644 *.crt && chmod 600 *.key                       # Permissões corretas
 🔒 Portas FECHADAS: 1883, 3000, 8086
 ```
 
-##### 3. **`setup_ssl.sh`** - Certificados Let's Encrypt
+##### 3. **`setup_ssl.sh`** - Certificados Let's Encrypt + Renovação MQTT ⭐
 
 **Funcionalidades:**
 
@@ -235,12 +244,33 @@ chmod 644 *.crt && chmod 600 *.key                       # Permissões corretas
 - ✅ Configura renovação automática via cron (3h da manhã)
 - ✅ Hook de deploy: reinicia Nginx após renovação
 - ✅ Reinicia Nginx com SSL configurado
+- ✅ **NOVO:** Cria script de renovação automática de certificados MQTT
+- ✅ **NOVO:** Verifica diariamente validade dos certificados MQTT (4h)
+- ✅ **NOVO:** Renova certificados MQTT quando < 30 dias para expirar
+- ✅ **NOVO:** Backup automático de certificados antigos
+- ✅ **NOVO:** Logging completo em `/var/log/mqtt_cert_renewal.log`
 
-**Comando de renovação automática:**
+**Comando de renovação automática HTTPS:**
 
 ```bash
 # Adicionado ao crontab automaticamente:
 0 3 * * * certbot renew --quiet --deploy-hook 'docker compose restart nginx'
+```
+
+**Script de renovação automática MQTT:**
+
+```bash
+# Criado em /usr/local/bin/renew_mqtt_certs.sh
+# Executado diariamente às 4h da manhã
+0 4 * * * /usr/local/bin/renew_mqtt_certs.sh
+
+# Funcionalidades do script:
+# - Verifica validade do certificado atual
+# - Calcula dias restantes até expiração
+# - Renova se faltarem menos de 30 dias
+# - Faz backup antes de renovar
+# - Reinicia Mosquitto automaticamente
+# - Registra tudo em log
 ```
 
 ##### 4. **`generate_credentials.sh`** - Geração Segura de Credenciais
@@ -551,6 +581,7 @@ Estes itens que **erroneamente** foram listados como urgentes na versão anterio
 4. ✅ **Geração de Credenciais Seguras** - Script `generate_credentials.sh`
 5. ✅ **Separação Dev/Prod** - docker-compose.yml vs docker-compose.prod.yml
 6. ✅ **Backup Automatizado** - Job diário implementado
+7. ✅ **Renovação Automática de Certificados MQTT** - Integrado ao `setup_ssl.sh` ⭐ _NOVO_
 
 ### 🟡 RECOMENDADO (Implementar conforme necessidade - 30 dias)
 
@@ -771,7 +802,7 @@ A **MOV Platform** é um **exemplo de excelência** em design de segurança para
 ❌ **FALSO (v1.0):** "Configuração manual complexa necessária"  
 ✅ **CORRETO:** Um comando (`deploy.sh`) configura tudo automaticamente
 
-#### Versão 2.1 (atual):
+#### Versão 2.1:
 
 ✅ **IMPLEMENTADO:** Todos containers agora rodam com usuários não-privilegiados
 
@@ -785,11 +816,24 @@ A **MOV Platform** é um **exemplo de excelência** em design de segurança para
 
 **Impacto:** Risco de containers reduzido de 🟡 MÉDIO para 🟢 BAIXO
 
+#### Versão 2.2 (atual):
+
+✅ **IMPLEMENTADO:** Renovação automática de certificados MQTT
+
+- Script `/usr/local/bin/renew_mqtt_certs.sh` criado automaticamente pelo `setup_ssl.sh`
+- Verifica diariamente (4h da manhã) a validade dos certificados
+- Renova automaticamente quando faltarem menos de 30 dias
+- Faz backup dos certificados antigos
+- Reinicia Mosquitto automaticamente
+- Logging completo em `/var/log/mqtt_cert_renewal.log`
+
+**Impacto:** Risco de certificados MQTT expirados eliminado - renovação totalmente automatizada
+
 ---
 
 **Relatório atualizado e revisado por:** GitHub Copilot  
-**Data:** 02/02/2026  
-**Versão:** 2.1 (Containers hardened)
+**Data de atualização:** 03/02/2026  
+**Versão:** 2.2 (Renovação automática MQTT implementada)
 
 ---
 
