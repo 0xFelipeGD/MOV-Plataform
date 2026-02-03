@@ -106,8 +106,17 @@ services:
       - INFLUX_TOKEN=${INFLUX_TOKEN}
       - INFLUX_ORG=${INFLUX_ORG}
       - INFLUX_BUCKET=${INFLUX_BUCKET}
+      - ANALYTICS_TEMP_THRESHOLD=${ANALYTICS_TEMP_THRESHOLD:-30.0}
+      - ANALYTICS_INTERVAL=${ANALYTICS_INTERVAL:-10}
     depends_on:
-      - influxdb
+      influxdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "python"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   # 6. SERVIÇO DE BACKUP AUTOMÁTICO
   backup_job:
@@ -117,27 +126,15 @@ services:
     depends_on:
       - grafana
       - influxdb
+    environment:
+      - BACKUP_INTERVAL=86400 # 24 horas em segundos
+      - RETENTION_DAYS=7 # Dias de retenção dos backups
     volumes:
       - grafana_data:/input/grafana:ro
       - influxdb_data:/input/influxdb:ro
       - ./backups:/output
-    command: >
-      sh -c "apk add --no-cache tar &&
-      while true; do
-        DATE=$$(date +%Y%m%d_%H%M%S)
-        echo '--- Iniciando Backup [$$DATE] ---'
-        
-        echo 'Compactando Grafana...'
-        tar czf /output/grafana_$$DATE.tar.gz -C /input/grafana .
-        
-        echo 'Compactando InfluxDB...'
-        tar czf /output/influxdb_$$DATE.tar.gz -C /input/influxdb .
-        
-        find /output -name '*.tar.gz' -mtime +7 -delete
-        
-        echo 'Backup Concluido! Dormindo por 24h...'
-        sleep 86400
-      done"
+      - ./scripts/backup.sh:/backup.sh:ro
+    command: ["sh", "/backup.sh"]
 
 volumes:
   grafana_data:

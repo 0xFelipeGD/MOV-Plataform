@@ -1,0 +1,73 @@
+# ==============================================================================
+
+# MOV Platform - Docker Ignore
+
+# ==============================================================================
+
+# Arquivos ignorados durante o build de imagens Docker.
+
+# Reduz tamanho da imagem e evita vazamento acidental de credenciais.
+
+# ==============================================================================
+
+# Variáveis de ambiente e credenciais
+
+.env
+.env._
+!.env.example
+_.key
+_.pem
+_.crt
+.credentials_info.txt
+
+# Dados e backups
+
+backups/
+\*.tar.gz
+influxdb/data/
+mosquitto/data/
+mosquitto/log/
+grafana/data/
+
+# Documentação (não necessária na imagem)
+
+\*.md
+instructions/
+LICENSE
+
+# Git
+
+.git/
+.gitignore
+
+# IDE e editores
+
+.vscode/
+.idea/
+_.swp
+_.swo
+\*~
+
+# Sistema operacional
+
+.DS_Store
+Thumbs.db
+
+# Python cache
+
+**pycache**/
+_.py[cod]
+_$py.class
+.Python
+venv/
+env/
+
+# Logs
+
+\*.log
+logs/
+
+# Certificados SSL (gerados em runtime)
+
+mosquitto/certs/
+nginx/ssl/

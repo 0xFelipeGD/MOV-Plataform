@@ -1,1 +1,4 @@
-influxdb-client
+# MOV Platform - Analytics Dependencies
+# Versões fixadas para reprodutibilidade
+
+influxdb-client>=1.36.0,<2.0.0

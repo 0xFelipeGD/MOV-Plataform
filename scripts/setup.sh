@@ -1,9 +1,19 @@
 #!/bin/bash
 set -e
 
+# ==============================================================================
+# MOV Platform - Setup Inicial
+# ==============================================================================
+
+# Diretório do projeto (pai do diretório scripts)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+cd "$PROJECT_DIR"
+
 echo "=========================================="
 echo "   MOV Platform - Setup Inicial"
 echo "=========================================="
+echo "Diretório do projeto: $PROJECT_DIR"
 echo ""
 
 # Cores para output
@@ -63,20 +73,24 @@ print_success "Diretório de backups criado"
 echo ""
 echo "3. Configurando permissões de segurança..."
 
-# Mosquitto (UID 1883:1883)
-if command -v sudo &> /dev/null; then
-    sudo chown -R 1883:1883 mosquitto/config mosquitto/data mosquitto/log 2>/dev/null || \
-        print_warning "Não foi possível ajustar permissões (sudo requerido). Execute: sudo chown -R 1883:1883 mosquitto/"
-    sudo chmod -R 755 mosquitto/config mosquitto/data mosquitto/log 2>/dev/null || true
-    
-    # InfluxDB (UID 1000:1000)
-    sudo chown -R 1000:1000 influxdb/config 2>/dev/null || \
-        print_warning "Não foi possível ajustar permissões (sudo requerido). Execute: sudo chown -R 1000:1000 influxdb/config"
-    sudo chmod -R 755 influxdb/config 2>/dev/null || true
-    
-    print_success "Permissões de segurança configuradas (containers rodam como usuários não-root)"
+# Usar o script dedicado de permissões
+if [ -f "$SCRIPT_DIR/fix_permissions.sh" ]; then
+    chmod +x "$SCRIPT_DIR/fix_permissions.sh"
+    if "$SCRIPT_DIR/fix_permissions.sh" "$PROJECT_DIR" 2>/dev/null; then
+        print_success "Permissões de segurança configuradas (containers rodam como usuários não-root)"
+    else
+        print_warning "Não foi possível ajustar todas as permissões. Execute: sudo $SCRIPT_DIR/fix_permissions.sh"
+    fi
 else
-    print_warning "sudo não disponível. Execute manualmente: sudo chown -R 1883:1883 mosquitto/ && sudo chown -R 1000:1000 influxdb/config"
+    # Fallback caso o script não exista
+    if command -v sudo &> /dev/null; then
+        sudo chown -R 1883:1883 mosquitto/config mosquitto/data mosquitto/log 2>/dev/null || \
+            print_warning "Não foi possível ajustar permissões (sudo requerido)."
+        sudo chown -R 1000:1000 influxdb/config 2>/dev/null || true
+        print_success "Permissões de segurança configuradas"
+    else
+        print_warning "sudo não disponível. Execute: sudo ./scripts/fix_permissions.sh"
+    fi
 fi
 
 # 4. Garantir que o entrypoint do Mosquitto tem permissão de execução
@@ -103,7 +117,7 @@ if ! command -v docker compose &> /dev/null && ! command -v docker-compose &> /d
 fi
 print_success "Docker Compose disponível"
 
-# 6. Informações finais
+# 7. Informações finais
 echo ""
 echo "=========================================="
 echo "   Setup Concluído com Sucesso!"
