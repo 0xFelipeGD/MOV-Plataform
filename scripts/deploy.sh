@@ -39,7 +39,7 @@ if [ ! -f .env ]; then
     echo -e "${RED}❌ Arquivo .env não encontrado!${NC}"
     echo ""
     echo "Execute primeiro:"
-    echo "  bash scripts/generate_credentials.sh > .env"
+    echo "  bash scripts/setup.sh"
     echo ""
     exit 1
 fi
@@ -94,7 +94,7 @@ fi
 echo ""
 
 # Atualizar configuração do Mosquitto para usar SSL
-echo -e "${YELLOW}[5/7] Configurando Mosquitto para SSL...${NC}"
+echo -e "${YELLOW}[5/8] Configurando Mosquitto para SSL...${NC}"
 
 if ! grep -q "listener 8883" mosquitto/config/mosquitto.conf 2>/dev/null; then
     echo -e "${YELLOW}⚠️  Adicionando configuração SSL ao mosquitto.conf${NC}"
@@ -114,8 +114,22 @@ else
 fi
 echo ""
 
+# Corrigir permissões
+echo -e "${YELLOW}[6/8] Corrigindo permissões dos diretórios...${NC}"
+if [ -f scripts/fix_permissions.sh ]; then
+    bash scripts/fix_permissions.sh
+    echo -e "${GREEN}✅ Permissões corrigidas${NC}"
+else
+    echo -e "${YELLOW}⚠️  Script fix_permissions.sh não encontrado, ajustando manualmente...${NC}"
+    # Mosquitto precisa de UID 1883
+    sudo chown -R 1883:1883 mosquitto/config mosquitto/data mosquitto/log 2>/dev/null || true
+    sudo chown -R 1883:1883 mosquitto/certs 2>/dev/null || true
+    echo -e "${GREEN}✅ Permissões ajustadas${NC}"
+fi
+echo ""
+
 # Iniciar em modo produção
-echo -e "${YELLOW}[6/7] Iniciando containers em modo PRODUÇÃO...${NC}"
+echo -e "${YELLOW}[7/8] Iniciando containers em modo PRODUÇÃO...${NC}"
 echo ""
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 echo ""
@@ -123,7 +137,7 @@ echo -e "${GREEN}✅ Containers iniciados${NC}"
 echo ""
 
 # Aguardar serviços ficarem prontos
-echo -e "${YELLOW}[7/7] Aguardando serviços ficarem prontos...${NC}"
+echo -e "${YELLOW}[8/8] Aguardando serviços ficarem prontos...${NC}"
 sleep 5
 
 # Verificar status

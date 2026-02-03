@@ -110,7 +110,7 @@ Na VPS, rode:
 
 ```bash
 # Clone seu projeto
-git clone https://github.com/seuusuario/MOV-Plataform.git
+git clone https://github.com/0xFelipeGD/MOV-Plataform.git
 
 # Entre na pasta
 cd MOV-Plataform
@@ -393,6 +393,73 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 ## 🆘 Problemas Comuns
 
+### "Address already in use" - Erro de porta ocupada (InfluxDB 8086 / Grafana 3000)
+
+**Erro típico:**
+
+```
+failed to bind host port 127.0.0.1:8086/tcp: address already in use
+failed to bind host port 127.0.0.1:3000/tcp: address already in use
+```
+
+**Causa:** Algum processo já está usando essas portas na VPS. Pode ser:
+
+- Containers antigos que não foram parados
+- Serviços pré-instalados da Hostinger/provedor
+- Outra instância do projeto rodando
+
+**Diagnóstico - Descobrir o que está usando a porta:**
+
+```bash
+# Ver processos nas portas problemáticas
+sudo ss -tulpn | grep ':8086\|:3000'
+
+# Ou com lsof (se disponível)
+sudo lsof -i :8086
+sudo lsof -i :3000
+
+# Ver todos os containers Docker rodando
+docker ps -a
+
+# Ver serviços do sistema
+sudo systemctl list-units --type=service --state=running | grep -E 'influx|grafana|node'
+```
+
+**Solução 1 - Parar containers antigos:**
+
+```bash
+# Parar TODOS os containers do projeto
+docker compose down
+
+# Se ainda houver containers órfãos
+docker stop $(docker ps -aq)
+docker rm $(docker ps -aq)
+```
+
+**Solução 2 - Matar processos nas portas:**
+
+```bash
+# Forçar liberação das portas
+sudo fuser -k 8086/tcp
+sudo fuser -k 3000/tcp
+```
+
+**Solução 3 - Desabilitar serviços pré-instalados:**
+
+```bash
+# Se a VPS veio com InfluxDB ou Grafana instalados
+sudo systemctl stop influxdb grafana-server 2>/dev/null
+sudo systemctl disable influxdb grafana-server 2>/dev/null
+```
+
+**Após liberar as portas, rode o deploy novamente:**
+
+```bash
+bash scripts/deploy.sh
+```
+
+---
+
 ### "Não consigo acessar o Grafana"
 
 **Verificar se está rodando:**
@@ -446,38 +513,85 @@ Todas as senhas estão lá!
 
 ---
 
+### "Mosquitto não encontra credenciais" ou "MQTT authentication failed"
+
+**Erro típico nos logs:**
+
+```
+ERRO: Variaveis MQTT_USER ou MQTT_PASSWORD nao definidas!
+```
+
+**Causa:** O arquivo `.env` não existe ou está incompleto.
+
+**Diagnóstico:**
+
+```bash
+# Verificar se .env existe e tem as variáveis MQTT
+cat .env | grep MQTT
+
+# Verificar se as variáveis chegam no container
+docker exec mov_broker env | grep MQTT
+
+# Ver logs do Mosquitto
+docker compose logs mosquitto
+```
+
+**Solução - Recriar credenciais:**
+
+```bash
+# Parar containers
+docker compose down
+
+# Gerar novo .env com todas as credenciais
+bash scripts/setup.sh
+
+# Verificar se foi criado
+cat .env | grep MQTT
+
+# Rodar deploy novamente
+bash scripts/deploy.sh
+```
+
+**⚠️ IMPORTANTE:** Sempre rode `bash scripts/setup.sh` ANTES do `deploy.sh`!
+
+---
+
 ---
 
 ## 📋 Resumo Executivo
 
-### Deploy Completo em 5 Comandos
+### Deploy Completo em 6 Comandos
 
 ```bash
 # 1. Clonar projeto na VPS
 git clone https://github.com/usuario/MOV-Plataform.git
 cd MOV-Plataform
 
-# 2. Gerar credenciais automaticamente
-bash scripts/generate_credentials.sh > .env
+# 2. Dar permissão de execução aos scripts
+chmod +x scripts/*.sh mosquitto/docker-entrypoint.sh
 
-# 3. Deploy com SSL/TLS automático
+# 3. Setup inicial (cria .env, diretórios e permissões)
+bash scripts/setup.sh
+
+# 4. Deploy com SSL/TLS automático
 bash scripts/deploy.sh
 
-# 4. Configurar firewall (UFW)
+# 5. Configurar firewall (UFW)
 sudo bash scripts/setup_firewall.sh
 
-# 5. SSL Let's Encrypt (se tiver domínio)
+# 6. SSL Let's Encrypt (se tiver domínio)
 sudo bash scripts/setup_ssl.sh seu-dominio.com
 ```
 
 ### ✅ O Que os Scripts Fazem Automaticamente
 
-| Script                    | Ação                                                |
-| ------------------------- | --------------------------------------------------- |
-| `generate_credentials.sh` | Gera senhas criptográficas (256-512 bits)           |
-| `deploy.sh`               | Inicia containers em modo produção com SSL/TLS MQTT |
-| `setup_firewall.sh`       | Configura UFW (permite apenas 22, 80, 443, 8883)    |
-| `setup_ssl.sh`            | Let's Encrypt HTTPS + renovação automática          |
+| Script                    | Ação                                                          |
+| ------------------------- | ------------------------------------------------------------- |
+| `setup.sh`                | **PRIMEIRO!** Cria `.env`, diretórios e ajusta permissões     |
+| `deploy.sh`               | Inicia containers em modo produção com SSL/TLS MQTT           |
+| `setup_firewall.sh`       | Configura UFW (permite apenas 22, 80, 443, 8883)              |
+| `setup_ssl.sh`            | Let's Encrypt HTTPS + renovação automática                    |
+| `generate_credentials.sh` | (Usado internamente pelo setup.sh) Gera senhas criptográficas |
 
 ### ✅ Credenciais do .env Aplicadas Automaticamente Em
 
