@@ -14,6 +14,23 @@
 
 ## 🔄 Workflow Completo (Git + VPS)
 
+### **⚠️ ANTES DE ATUALIZAR NA VPS: Backup de Segurança**
+
+**SEMPRE faça backup antes de aplicar mudanças em produção:**
+
+```bash
+# Backup manual imediato
+sudo /usr/local/bin/mov_remote_backup.sh
+
+# OU esperar o backup automático (se configurou backup remoto)
+# Backup local: 1h da manhã
+# Backup remoto: 2h da manhã
+```
+
+**Se algo der errado, você pode restaurar! 🛟**
+
+---
+
 ### **FASE 1: Desenvolvimento Local**
 
 ```bash

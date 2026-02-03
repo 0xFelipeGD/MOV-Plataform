@@ -105,9 +105,16 @@ chmod +x scripts/setup.sh
 
 - Cria estrutura de diretórios necessária
 - Gera senhas aleatórias e fortes automaticamente
+- **Gera senhas de criptografia para backups** (automático)
 - Salva tudo no arquivo `.env`
 - Configura permissões corretas
 - Você NÃO precisa criar senhas manualmente
+
+**O arquivo .env contém:**
+
+- Senhas MQTT, InfluxDB, Grafana
+- Tokens de autenticação
+- **Senhas de criptografia de backup** (geradas automaticamente)
 
 **Alternativa (manual):**
 
@@ -217,6 +224,7 @@ sudo bash scripts/setup_ssl.sh grafana.seusite.com.br
 2. ✅ Gera certificado SSL/TLS **GRÁTIS** do Let's Encrypt
 3. ✅ Atualiza configuração do Nginx para usar HTTPS
 4. ✅ Configura renovação automática (certificados expiram a cada 90 dias)
+5. ✅ Configura renovação automática de certificados MQTT
 
 **Você NÃO precisa descomentar nada manualmente!** O script faz isso.
 
@@ -230,7 +238,62 @@ Deve aparecer o **cadeado verde 🔒** no navegador!
 
 ---
 
+### **PASSO 8: Configurar Backup Remoto (Google Drive/OneDrive) - RECOMENDADO**
+
+**Por que fazer isso?** Se o servidor pegar fogo ou for hackeado, seus backups estarão seguros na nuvem! 🌐
+
+Na VPS:
+
+```bash
+bash scripts/setup_remote_backup.sh
+```
+
+**O que isso faz:**
+
+1. ✅ Instala Rclone (ferramenta de sincronização)
+2. ✅ Você escolhe: Google Drive (15 GB grátis), MEGA (20 GB), OneDrive ou Dropbox
+3. ✅ Faz login na sua conta (abre o navegador automaticamente)
+4. ✅ Pergunta se quer criptografar (RECOMENDADO para dados sensíveis)
+5. ✅ **Usa senhas do .env automaticamente** (geradas no PASSO 3)
+6. ✅ Configura envio automático TODO DIA às 2h da manhã
+7. ✅ Mantém 30 dias de backups na nuvem
+
+**Você faz UMA VEZ e depois esquece!** Funciona sozinho para sempre.
+
+**Exemplo de escolha:**
+
+- Opção 1 (Google Drive) ⭐ RECOMENDADO
+- Criptografar? **S** (usa senhas do .env automaticamente)
+- Login no Google (abre navegador)
+- Pronto! Backups diários automáticos
+
+**🔐 Segurança:**
+
+- Senhas de criptografia geradas automaticamente (256 bits)
+- Armazenadas no .env (seguro, não vai para GitHub)
+- Google Drive **não consegue** ler seus backups criptografados
+- Em caso de perda: restaure o .env junto com os backups
+
+**Ver seus backups:**
+
+- Acesse https://drive.google.com
+- Pasta: "MOV-Platform-Backups"
+- Arquivos: grafana_20260203.tar.gz, influxdb_20260203.tar.gz
+
+---
+
 ## ✅ PRONTO! Deploy Completo!
+
+### ⏰ Automação Configurada (funciona sozinho):
+
+**Você configurou uma vez, agora tudo roda automaticamente:**
+
+- 🔄 **1h da manhã:** Backup local (Grafana + InfluxDB) → pasta `./backups`
+- 🌐 **2h da manhã:** Backup enviado para Google Drive/MEGA (se configurou)
+- 🔐 **3h da manhã:** Renovação de certificados HTTPS (Let's Encrypt)
+- 🔒 **4h da manhã:** Renovação de certificados MQTT (autoassinados)
+
+**Você não precisa fazer NADA! Sistema se mantém sozinho.** 🎉
 
 ### Seus acessos em PRODUÇÃO:
 
@@ -386,7 +449,262 @@ sudo bash scripts/setup_ssl.sh seu-dominio.com
 
 ---
 
-## 📚 APÊNDICE A: Instalar Docker na VPS
+## � Backup e Recuperação
+
+### Backup Local (automático)
+
+**Container `backup_job` roda TODO DIA às 1h da manhã:**
+
+```bash
+# Ver backups locais
+ls -lh backups/
+
+# Saída:
+# grafana_20260203_010000.tar.gz  (dashboards, configurações)
+# influxdb_20260203_010000.tar.gz (todos os dados de sensores)
+```
+
+**Retenção:** 7 dias locais (limpa automaticamente)
+
+---
+
+### Backup Remoto (Google Drive/MEGA)
+
+**Se você configurou o `setup_remote_backup.sh`, TODO DIA às 2h da manhã os backups vão para a nuvem.**
+
+**Comandos úteis:**
+
+```bash
+# Ver backups na nuvem
+rclone ls mov-backup:
+
+# Executar backup manual agora
+sudo /usr/local/bin/mov_remote_backup.sh
+
+# Ver logs do último backup
+tail -50 /var/log/mov_remote_backup.log
+
+# Ver espaço usado no Google Drive
+rclone about mov-drive:
+```
+
+**Acesso via navegador:**
+
+- Google Drive: https://drive.google.com
+- Pasta: "MOV-Platform-Backups"
+
+---
+
+### Restaurar de um Backup
+
+**Cenário: Servidor pegou fogo 🔥 ou dados corrompidos**
+
+#### 1. Baixar backup da nuvem:
+
+```bash
+# Listar backups disponíveis
+rclone ls mov-backup:
+
+# Baixar o mais recente
+rclone copy mov-backup:grafana_20260203_010000.tar.gz ./
+rclone copy mov-backup:influxdb_20260203_010000.tar.gz ./
+```
+
+#### 2. Parar containers:
+
+```bash
+docker compose down
+```
+
+#### 3. Extrair backups:
+
+```bash
+# Restaurar Grafana
+tar -xzf grafana_20260203_010000.tar.gz -C /var/lib/docker/volumes/grafana_data/_data/
+
+# Restaurar InfluxDB
+tar -xzf influxdb_20260203_010000.tar.gz -C /var/lib/docker/volumes/influxdb_data/_data/
+```
+
+#### 4. Reiniciar:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+**✅ Tudo restaurado!** Dashboards, dados, configurações voltam ao normal.
+
+---
+
+## 🔧 Comandos de Manutenção
+
+### Ver status dos serviços:
+
+```bash
+docker compose ps
+docker compose logs -f        # Ver logs em tempo real
+docker compose logs grafana   # Logs de um serviço específico
+```
+
+### Ver agendamentos automáticos:
+
+```bash
+# Ver tarefas cron configuradas
+crontab -l
+
+# Saída esperada:
+# 0 3 * * * certbot renew --quiet --deploy-hook 'docker compose restart nginx'
+# 0 4 * * * /usr/local/bin/renew_mqtt_certs.sh
+# 0 2 * * * /usr/local/bin/mov_remote_backup.sh
+```
+
+### Espaço em disco:
+
+```bash
+# Ver espaço usado pelos containers
+docker system df
+
+# Limpar containers/imagens antigas
+docker system prune -a
+```
+
+### Certificados MQTT:
+
+```bash
+# Ver validade do certificado
+openssl x509 -enddate -noout -in mosquitto/certs/server.crt
+
+# Ver log de renovação
+sudo tail -f /var/log/mqtt_cert_renewal.log
+
+# Forçar renovação agora
+sudo /usr/local/bin/renew_mqtt_certs.sh
+```
+
+---
+
+## 🔐 Segurança do Backup e Credenciais
+
+### Arquivo .env - O que tem dentro:
+
+```bash
+# Ver conteúdo (na VPS)
+cat .env
+
+# Exemplo:
+MQTT_PASSWORD=xYz123...
+GRAFANA_PASSWORD=aBc456...
+BACKUP_CRYPT_PASSWORD=pQr789...  ← Senha de criptografia dos backups
+BACKUP_CRYPT_SALT=lMn012...      ← Salt da criptografia
+```
+
+### Como funciona a segurança:
+
+```
+┌─────────────────────────────────────┐
+│  Arquivo .env (no servidor)         │
+│  ✅ NÃO vai para GitHub (.gitignore)│
+│  ✅ Senhas fortes (256 bits)        │
+│  ✅ Geradas automaticamente          │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│  Backup Local (.tar.gz)             │
+│  ✅ Dados do Grafana + InfluxDB     │
+└──────────────┬──────────────────────┘
+               │
+               ▼ (se escolheu criptografar)
+┌─────────────────────────────────────┐
+│  Rclone Crypt (AES-256)             │
+│  ✅ Usa senhas do .env              │
+│  ✅ Criptografa antes de enviar     │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│  Google Drive (nuvem)               │
+│  ✅ Arquivos criptografados         │
+│  ❌ Google NÃO consegue ler         │
+│  ❌ Hacker NÃO consegue descriptografar│
+└─────────────────────────────────────┘
+```
+
+### Se alguém invadir seu Google Drive:
+
+**SEM criptografia:**
+
+```
+❌ Pessoa baixa: grafana_20260203.tar.gz
+❌ Extrai e vê tudo: senhas, dados, tokens
+```
+
+**COM criptografia (usando .env):**
+
+```
+✅ Pessoa baixa: arquivo criptografado (lixo binário)
+❌ Tenta extrair: IMPOSSÍVEL sem a senha do .env
+✅ Seus dados estão seguros!
+```
+
+### Proteger o arquivo .env:
+
+```bash
+# Permissões corretas (apenas você lê)
+chmod 600 .env
+ls -la .env
+# Saída: -rw------- 1 usuario usuario .env
+
+# Fazer backup do .env (IMPORTANTE!)
+cp .env .env.backup
+scp .env seu-computador-local:~/backups/mov-platform-env-$(date +%Y%m%d)
+
+# Guardar em gerenciador de senhas
+# 1Password, Bitwarden, KeePass, etc.
+```
+
+### Clonar em outra máquina:
+
+```bash
+# Máquina nova (desenvolvimento, outra VPS, etc)
+git clone https://github.com/seu-usuario/MOV-Plataform.git
+cd MOV-Plataform
+
+# Opção 1: Gerar novas credenciais (recomendado para dev)
+bash scripts/generate_credentials.sh > .env
+
+# Opção 2: Copiar .env da produção (para recuperação)
+scp vps-producao:~/MOV-Plataform/.env .
+
+# Configurar backup (usa senhas do .env automaticamente)
+bash scripts/setup_remote_backup.sh
+```
+
+### Níveis de segurança:
+
+| Componente                       | Proteção                 | Onde Está       |
+| -------------------------------- | ------------------------ | --------------- |
+| **Senhas MQTT/Grafana/InfluxDB** | 🔒 Arquivo .env (local)  | Servidor apenas |
+| **Token Google Drive**           | 🔒 /root/.config/rclone/ | Servidor apenas |
+| **Senhas de criptografia**       | 🔒 Arquivo .env (local)  | Servidor apenas |
+| **Backups locais**               | ⚠️ Não criptografados    | ./backups/      |
+| **Backups remotos**              | 🔐 AES-256 (se escolheu) | Google Drive    |
+
+### ⚠️ NUNCA faça:
+
+```bash
+# ❌ ERRADO - Commitar .env no Git
+git add .env
+git commit -m "add env"  # ← Suas senhas vão para o GitHub!
+
+# ✅ CORRETO - .env já está no .gitignore
+git status
+# .env não aparece (está ignorado)
+```
+
+---
+
+## �📚 APÊNDICE A: Instalar Docker na VPS
 
 Se a VPS não tem Docker ainda:
 

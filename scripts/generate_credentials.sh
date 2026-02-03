@@ -33,6 +33,12 @@ GRAFANA_PASS=$(openssl rand -base64 32 | tr -d '\n')
 echo "GRAFANA_PASSWORD=$GRAFANA_PASS"
 echo ""
 
+echo "# Backup Remoto - Criptografia"
+BACKUP_CRYPT_PASS=$(openssl rand -base64 32 | tr -d '\n')
+BACKUP_CRYPT_SALT=$(openssl rand -base64 32 | tr -d '\n')
+echo "BACKUP_CRYPT_PASSWORD=$BACKUP_CRYPT_PASS"
+echo "BACKUP_CRYPT_SALT=$BACKUP_CRYPT_SALT"
+echo ""
 
 echo "# =========================================="
 echo "# SALVE ESTAS CREDENCIAIS EM LOCAL SEGURO!"
