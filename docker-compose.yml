@@ -12,7 +12,7 @@ services:
       - ./mosquitto/config:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
-      # Mapeia o script que você criou para dentro do container
+      - ./mosquitto/certs:/mosquitto/certs:ro
       - ./mosquitto/docker-entrypoint.sh:/docker-entrypoint.sh
     environment:
       # Passa as variáveis do .env para o script ler
