@@ -1,16 +1,52 @@
-# 💻 Guia de Desenvolvimento - MOV Platform
+# 💻 MOV Platform - Workflow de Desenvolvimento
 
-**Começando a desenvolver em uma nova máquina ou trabalhando em equipe.**
+**Guia completo para desenvolver localmente, trabalhar em equipe e sincronizar código.**
 
 ---
 
-## 🎯 Cenários Cobertos
+## 📋 Visão Geral
 
-- ✅ Clonar projeto pela primeira vez
-- ✅ Desenvolver em múltiplos computadores
-- ✅ Trabalhar em equipe
-- ✅ Sincronizar mudanças via Git
-- ✅ Testar localmente antes de enviar pra VPS
+### O Que Este Guia Cobre
+
+✅ Setup inicial em nova máquina  
+✅ Desenvolvimento local  
+✅ Trabalho em equipe (Git workflow)  
+✅ Sincronização de mudanças  
+✅ Testes antes de produção  
+✅ Boas práticas
+
+### Para Quem É Este Guia
+
+- Desenvolvedores começando no projeto
+- Equipes trabalhando colaborativamente
+- Quem precisa desenvolver em múltiplos computadores
+- Onboarding de novos membros da equipe
+
+---
+
+## 🎯 Cenários Principais
+
+### ✅ Cenário 1: Sou Novo no Projeto
+
+**Objetivo:** Configurar ambiente de desenvolvimento pela primeira vez.
+
+**Siga:** [SETUP INICIAL](#-setup-inicial---primeira-vez-novo-pc)
+
+---
+
+### ✅ Cenário 2: Já Tenho o Projeto, Quero Começar a Desenvolver
+
+**Objetivo:** Workflow diário de desenvolvimento.
+
+**Siga:** [WORKFLOW DIÁRIO](#-workflow-di%C3%A1rio)
+
+---
+
+### ✅ Cenário 3: Trabalho em Equipe
+
+**Objetivo:** Sincronizar código com outros desenvolvedores.
+
+**Siga:** [TRABALHO EM EQUIPE](#-trabalho-em-equipe)
 
 ---
 

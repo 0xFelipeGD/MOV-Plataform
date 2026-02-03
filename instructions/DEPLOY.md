@@ -1,29 +1,67 @@
-# 🚀 MOV Platform - Guia COMPLETO de Deploy
+# 🚀 MOV Platform - Guia Completo de Deploy em Produção
 
-**Nunca fez deploy? Sem problemas!** Este guia é passo a passo, sem pular nada.
+**Primeira vez fazendo deploy?** Este guia explica tudo passo a passo, sem pular nada.
 
 ---
 
-## 📍 FASE 1: Desenvolvimento (no seu PC)
+## 📋 Visão Geral
 
-### Como testar localmente:
+### O Que Este Guia Cobre
+
+✅ Deploy completo em servidor VPS (Ubuntu/Debian)  
+✅ Configuração de segurança (firewall, SSL/TLS)  
+✅ Backup automatizado local e remoto  
+✅ Separação desenvolvimento vs produção  
+✅ Troubleshooting e validação
+
+### Tempo Estimado
+
+- **Setup inicial:** 20-30 minutos
+- **Com SSL e backup:** 40-60 minutos
+
+### Pré-requisitos
+
+- VPS com Ubuntu 20.04+ ou Debian (mínimo 2GB RAM)
+- Domínio apontando para VPS (opcional, para SSL)
+- Docker instalado na VPS (ver Apêndice A)
+- Conhecimento básico de SSH
+
+---
+
+## 📍 FASE 1: Teste Local (Desenvolvimento)
+
+**Antes de fazer deploy em produção, teste localmente no seu PC:**
+
+### Desenvolvimento Local
 
 ```bash
-# Na pasta do projeto
+# 1. Clonar projeto
+git clone <seu-repositorio>
+cd MOV-Plataform
+
+# 2. Gerar credenciais
+bash scripts/setup.sh
+
+# 3. Iniciar serviços
 docker compose up -d
+
+# 4. Verificar status
+docker compose ps
 ```
 
-**Acesso local:**
+### Acessos Locais
 
-- Grafana: http://localhost:3000
-- InfluxDB: http://localhost:8086
-- MQTT: localhost:1883
+| Serviço      | URL                   | Credenciais |
+| ------------ | --------------------- | ----------- |
+| **Grafana**  | http://localhost:3000 | Ver `.env`  |
+| **InfluxDB** | http://localhost:8086 | Ver `.env`  |
+| **MQTT**     | localhost:1883        | Ver `.env`  |
 
-**Tudo aberto, fácil de testar!** ✅
+💡 **Dica:** No desenvolvimento, todas as portas ficam abertas para facilitar testes.
 
 ---
 
-## 📍 FASE 2: Preparar Deploy na VPS
+## 📍 FASE 2: Preparar Ambiente de Produção
 
 ### O que você precisa TER antes:
 
@@ -408,44 +446,190 @@ Todas as senhas estão lá!
 
 ---
 
-## 📋 Resumo: É só seguir os passos?
+---
 
-**SIM! Literalmente isso:**
+## 📋 Resumo Executivo
+
+### Deploy Completo em 5 Comandos
 
 ```bash
-# 1. Na VPS
-git clone seu-repo
+# 1. Clonar projeto na VPS
+git clone https://github.com/usuario/MOV-Plataform.git
 cd MOV-Plataform
 
-# 2. Gerar senhas
+# 2. Gerar credenciais automaticamente
 bash scripts/generate_credentials.sh > .env
 
-# 3. Deploy
+# 3. Deploy com SSL/TLS automático
 bash scripts/deploy.sh
 
-# 4. Firewall
+# 4. Configurar firewall (UFW)
 sudo bash scripts/setup_firewall.sh
 
-# 5. SSL (opcional)
+# 5. SSL Let's Encrypt (se tiver domínio)
 sudo bash scripts/setup_ssl.sh seu-dominio.com
 ```
 
-### ✅ **As credenciais do .env vão AUTOMATICAMENTE para:**
+### ✅ O Que os Scripts Fazem Automaticamente
 
-- ✅ Mosquitto (MQTT)
-- ✅ InfluxDB
-- ✅ Grafana
-- ✅ Telegraf
+| Script                    | Ação                                                |
+| ------------------------- | --------------------------------------------------- |
+| `generate_credentials.sh` | Gera senhas criptográficas (256-512 bits)           |
+| `deploy.sh`               | Inicia containers em modo produção com SSL/TLS MQTT |
+| `setup_firewall.sh`       | Configura UFW (permite apenas 22, 80, 443, 8883)    |
+| `setup_ssl.sh`            | Let's Encrypt HTTPS + renovação automática          |
 
-### ❌ **Você NÃO precisa:**
+### ✅ Credenciais do .env Aplicadas Automaticamente Em
 
-- ❌ Editar arquivos de configuração manualmente
-- ❌ Criar senhas você mesmo
-- ❌ Configurar cada serviço individualmente
+- ✅ Mosquitto (broker MQTT)
+- ✅ InfluxDB (banco de dados)
+- ✅ Grafana (dashboards)
+- ✅ Telegraf (coletor)
+- ✅ Analytics (processamento Python)
+
+### ❌ Você NÃO Precisa
+
+- ❌ Editar arquivos `.conf` manualmente
+- ❌ Criar senhas fracas você mesmo
+- ❌ Configurar serviços um por um
 - ❌ Abrir/fechar portas manualmente
-- ❌ Descomentar código no Nginx
+- ❌ Lembrar de renovar certificados
 
-**Tudo é AUTOMÁTICO!** 🎉
+**🎯 Resultado:** Plataforma segura rodando em produção com backup automático e renovação de certificados.
+
+---
+
+## 🎯 Checklist de Validação Pós-Deploy
+
+### 1. Verificar Status dos Containers
+
+```bash
+# Ver status de todos os serviços
+docker compose ps
+
+# Resultado esperado: todos "Up" ou "Up (healthy)"
+```
+
+### 2. Verificar Logs
+
+```bash
+# Ver últimas 50 linhas de todos os serviços
+docker compose logs --tail=50
+
+# Ver logs em tempo real de um serviço
+docker compose logs -f grafana
+docker compose logs -f mosquitto
+docker compose logs -f influxdb
+```
+
+### 3. Testar Acessos
+
+#### Com Domínio Configurado
+
+- **Grafana:** https://seu-dominio.com
+  - Deve redirecionar HTTP → HTTPS automaticamente
+  - Certificado SSL válido (Let's Encrypt)
+  - Login com credenciais do `.env`
+
+- **MQTT:** `seu-dominio.com:8883`
+  - Conexão SSL/TLS obrigatória
+  - Autenticação com credenciais do `.env`
+
+#### Sem Domínio (Apenas IP)
+
+```bash
+# SSH tunnel para Grafana
+ssh -L 3000:localhost:3000 usuario@ip-vps
+# Acesse: http://localhost:3000
+
+# SSH tunnel para InfluxDB
+ssh -L 8086:localhost:8086 usuario@ip-vps
+# Acesse: http://localhost:8086
+```
+
+### 4. Testar Publicação MQTT
+
+```bash
+# Publicar mensagem de teste (sem SSL - apenas desenvolvimento)
+mosquitto_pub -h seu-dominio.com -p 1883 \
+  -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
+  -t "mov/dados/teste" \
+  -m '{"timestamp":"2026-02-03T10:00:00Z","tags":{"dispositivo":"teste","tipo":"temperatura"},"fields":{"temperatura_c":25.5}}'
+
+# Publicar com SSL/TLS (produção)
+mosquitto_pub -h seu-dominio.com -p 8883 \
+  --cafile /etc/ssl/certs/ca-certificates.crt \
+  -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
+  -t "mov/dados/teste" \
+  -m '{"temperatura_c":25.5}'
+```
+
+### 5. Verificar Firewall
+
+```bash
+# Ver status do UFW
+sudo ufw status verbose
+
+# Resultado esperado:
+# Status: active
+# 22/tcp     ALLOW IN    SSH
+# 80/tcp     ALLOW IN    HTTP
+# 443/tcp    ALLOW IN    HTTPS
+# 8883/tcp   ALLOW IN    MQTT SSL
+```
+
+### 6. Verificar Certificados SSL
+
+```bash
+# Verificar certificado HTTPS (Let's Encrypt)
+sudo certbot certificates
+
+# Verificar certificado MQTT
+openssl x509 -in mosquitto/certs/server.crt -noout -dates
+
+# Ver dias restantes
+openssl x509 -in mosquitto/certs/server.crt -noout -enddate
+```
+
+### 7. Testar Backup Automático
+
+```bash
+# Ver logs do container de backup
+docker compose logs backup_job
+
+# Verificar se backups estão sendo criados
+ls -lh backups/
+
+# Executar backup remoto manualmente (se configurado)
+sudo /usr/local/bin/mov_remote_backup.sh
+
+# Ver logs do backup remoto
+tail -50 /var/log/mov_remote_backup.log
+```
+
+### 8. Verificar Cron Jobs
+
+```bash
+# Listar cron jobs do root
+sudo crontab -l
+
+# Resultado esperado:
+# 0 3 * * * certbot renew --quiet --deploy-hook 'docker compose restart nginx'
+# 0 4 * * * /usr/local/bin/renew_mqtt_certs.sh
+# 0 2 * * * /usr/local/bin/mov_remote_backup.sh >> /var/log/mov_remote_backup.log 2>&1
+```
+
+### ✅ Checklist Final
+
+| Item                 | Comando de Verificação      | Status Esperado             |
+| -------------------- | --------------------------- | --------------------------- |
+| Containers rodando   | `docker compose ps`         | Todos "Up"                  |
+| Grafana acessível    | Abrir https://dominio       | Login aparece               |
+| MQTT conecta         | `mosquitto_pub` com SSL     | Sem erros                   |
+| Firewall ativo       | `sudo ufw status`           | Active                      |
+| Certificados válidos | `sudo certbot certificates` | Valid, >30 dias             |
+| Backup funciona      | `ls backups/`               | Arquivos `.tar.gz` recentes |
+| Cron configurado     | `sudo crontab -l`           | 3 jobs listados             |
 
 ---
 
@@ -730,15 +914,42 @@ docker compose version
 
 ---
 
-## 📚 APÊNDICE B: Diferenças Dev vs Prod
+## 📚 APÊNDICE B: Diferenças Desenvolvimento vs Produção
 
-| Aspecto       | Desenvolvimento (PC) | Produção (VPS)              |
-| ------------- | -------------------- | --------------------------- |
-| **Comando**   | `docker compose up`  | `bash scripts/deploy.sh`    |
-| **Grafana**   | `localhost:3000`     | `https://dominio` via Nginx |
-| **InfluxDB**  | `localhost:8086`     | Fechado (SSH tunnel)        |
-| **MQTT**      | `1883` sem SSL       | `8883` com SSL              |
-| **Segurança** | Tudo aberto          | Firewall + SSL              |
+### Tabela Comparativa
+
+| Aspecto                 | Desenvolvimento (PC)          | Produção (VPS)                                             |
+| ----------------------- | ----------------------------- | ---------------------------------------------------------- |
+| **Arquivo Compose**     | `docker-compose.yml`          | `docker-compose.yml` + `docker-compose.prod.yml` (overlay) |
+| **Comando Iniciar**     | `docker compose up -d`        | `bash scripts/deploy.sh`                                   |
+| **Grafana**             | `localhost:3000` direto       | `https://dominio` via Nginx com SSL                        |
+| **InfluxDB**            | `localhost:8086` exposto      | `127.0.0.1:8086` (SSH tunnel apenas)                       |
+| **MQTT**                | Porta `1883` sem criptografia | Porta `8883` com SSL/TLS                                   |
+| **Mosquitto WebSocket** | Porta `9001` exposta          | Removida (não exposta)                                     |
+| **Firewall**            | Desabilitado                  | UFW ativo (22, 80, 443, 8883)                              |
+| **SSL/TLS**             | Opcional                      | Obrigatório (Let's Encrypt)                                |
+| **Backup**              | Manual                        | Automático (1h AM local, 2h AM remoto)                     |
+| **Logs**                | `docker compose logs`         | Logs persistidos + `/var/log/`                             |
+| **Credenciais**         | `.env` local gerado           | `.env` gerado na VPS (único por servidor)                  |
+| **Health Checks**       | Ativos                        | Ativos                                                     |
+| **Restart Policy**      | `unless-stopped`              | `unless-stopped`                                           |
+
+### Porque Essa Separação?
+
+**Desenvolvimento (Local):**
+
+- 🎯 **Objetivo:** Facilitar testes e debug
+- ✅ Portas abertas para acesso direto
+- ✅ Sem criptografia (mais rápido)
+- ✅ Logs visíveis no terminal
+
+**Produção (VPS):**
+
+- 🎯 **Objetivo:** Segurança e confiabilidade
+- ✅ Apenas portas essenciais expostas
+- ✅ Criptografia obrigatória (TLS/SSL)
+- ✅ Firewall bloqueando tudo exceto necessário
+- ✅ Backup automático para recuperação
 
 ---
 

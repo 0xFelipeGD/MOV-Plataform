@@ -1,63 +1,184 @@
-# 🏭 MOV Platform - Plataforma de Monitoramento IoT Industrial
+# 🏭 MOV Platform - Monitoramento Industrial IoT
 
-Uma plataforma completa de monitoramento industrial baseada em IoT, utilizando MQTT, InfluxDB, Telegraf, Grafana e Analytics com Python.
+**Plataforma profissional de coleta, processamento e visualização de dados IoT em tempo real.**
 
-## ⚡ Início Rápido (3 comandos!)
+Arquitetura moderna baseada em containers Docker, com MQTT seguro, InfluxDB, Grafana e processamento analítico automatizado.
+
+---
+
+## 🎯 O Que é a MOV Platform?
+
+Uma **solução self-hosted completa** para monitoramento industrial e IoT, projetada para empresas que precisam de **controle total sobre seus dados** sem custos recorrentes de SaaS.
+
+### 💡 Por Que Escolher a MOV Platform?
+
+#### 💰 **Economia Real**
+
+- **SaaS Tradicional:** $50-200/mês por plataforma IoT
+- **MOV Platform:** $5-20/mês (apenas VPS) → **Economia de $420-2.160/ano**
+
+#### 🔒 **Segurança e Privacidade**
+
+- Dados ficam no **SEU servidor** - sem enviar para terceiros
+- Criptografia TLS/SSL em todas as comunicações (MQTT 8883, HTTPS 443)
+- Backup criptografado AES-256 em nuvem gratuita (Google Drive/MEGA)
+- **Facilita LGPD/GDPR:** Você controla onde os dados são armazenados
+
+#### ⚡ **Facilidade Profissional**
+
+- **Deploy completo em 10 minutos:** `bash scripts/deploy.sh`
+- Renovação automática de certificados (HTTPS e MQTT)
+- Backup diário automático (local 1h AM, remoto 2h AM)
+- Scripts eliminam erro humano - configuração sempre consistente
+
+#### 🏗️ **Qualidade de Código Comercial**
+
+- **Documentação completa:** 5 guias cobrindo dev, deploy, operação e segurança
+- Separação dev/prod com arquivos Docker Compose específicos
+- Todos os containers com usuários não-root (princípio do menor privilégio)
+- Health checks automáticos e restart policies inteligentes
+- Credenciais geradas com OpenSSL (256-512 bits de entropia)
+
+### 🎯 Ideal Para
+
+| Setor                    | Casos de Uso                                                          |
+| ------------------------ | --------------------------------------------------------------------- |
+| 🏭 **Indústria 4.0**     | Sensores de temperatura, pressão, vibração; OEE; manutenção preditiva |
+| 🌱 **Agronegócio**       | Monitoramento de estufas, irrigação inteligente, controle climático   |
+| 🏢 **Automação Predial** | Consumo de energia, climatização, segurança patrimonial               |
+| 🚚 **Logística**         | Rastreamento de frotas, telemetria de veículos, cold chain            |
+| 🏥 **Saúde**             | Monitoramento de equipamentos hospitalares, freezers de vacinas       |
+| ⚡ **Energia**           | Smart grids, usinas solares, monitoramento de geradores               |
+
+---
+
+## ⚡ Início Rápido
+
+### Desenvolvimento Local (3 comandos!)
 
 ```bash
+# 1. Clonar e entrar no projeto
 git clone <seu-repositorio> && cd MOV-Plataform
+
+# 2. Gerar credenciais e criar estrutura
 chmod +x scripts/setup.sh && ./scripts/setup.sh
+
+# 3. Iniciar todos os serviços
 docker compose up -d
 ```
 
-**Pronto!** Acesse: http://localhost:3000 (Grafana) | http://localhost:8086 (InfluxDB)  
+**Pronto!** Acesse:
+
+- 📊 **Grafana:** http://localhost:3000 (Dashboards)
+- 📈 **InfluxDB:** http://localhost:8086 (Banco de dados)
+- 🔌 **MQTT:** localhost:1883 (Broker)
+
 _Credenciais geradas automaticamente estão no arquivo `.env`_
+
+### Deploy em Produção (VPS)
+
+```bash
+# Na VPS, executar:
+chmod +x scripts/deploy.sh && bash scripts/deploy.sh
+```
+
+**Resultado:** Plataforma rodando com SSL/TLS, firewall configurado e backup automático.
+
+**Para configuração completa de produção**, consulte [instructions/DEPLOY.md](instructions/DEPLOY.md)
 
 ---
 
 ## 📋 Índice
 
-- [Início Rápido](#-início-rápido-3-comandos)
-- [Sobre o Projeto](#sobre-o-projeto)
-- [Arquitetura](#arquitetura)
-- [Pré-requisitos](#pré-requisitos)
-- [Instalação](#instalação)
-- [Uso](#uso)
-- [Configuração](#configuração)
-- [Serviços](#serviços)
-- [Backup Automático](#backup-automático)
-- [Desenvolvimento](#desenvolvimento)
+- [O Que é a MOV Platform?](#-o-que-é-a-mov-platform)
+- [Início Rápido](#-início-rápido)
+- [Arquitetura](#-arquitetura)
+- [Stack Tecnológica](#-stack-tecnológica)
+- [Pré-requisitos](#-pré-requisitos)
+- [Instalação](#-instalação)
+- [Configuração](#%EF%B8%8F-configuração)
+- [Serviços](#-serviços)
+- [Backup e Segurança](#-backup-e-segurança)
+- [Desenvolvimento](#%EF%B8%8F-desenvolvimento)
+- [Documentação Completa](#-documentação-completa)
+- [Segurança](#-segurança)
+- [Contribuindo](#-contribuindo)
+- [Licença](#-licença)
 
-## 🎯 Sobre o Projeto
+---
 
-A **MOV Platform** é uma solução completa para monitoramento de dados industriais em tempo real. O sistema coleta dados de sensores IoT via protocolo MQTT, armazena em banco de dados de séries temporais, processa insights automaticamente e visualiza tudo em dashboards profissionais.
-
-### Principais Funcionalidades
-
-- 📡 Coleta de dados via MQTT
-- 💾 Armazenamento em banco de dados de séries temporais (InfluxDB)
-- 📊 Visualização em tempo real com Grafana
-- 🤖 Processamento automático de insights com Python
-- 🔒 Autenticação e segurança integradas
-- 💾 Sistema de backup automático diário
-- 🐳 Totalmente containerizado com Docker
-
-## 🏗️ Arquitetura
+## �️ Arquitetura
 
 ```
-┌─────────────┐
-│   Sensores  │ (ESP32, Raspberry Pi, etc.)
-│     IoT     │
-└──────┬──────┘
-       │ MQTT
-       ▼
-┌─────────────┐     ┌─────────────┐
-│  Mosquitto  │────▶│  Telegraf   │
-│   (Broker)  │     │  (Coletor)  │
-└─────────────┘     └──────┬──────┘
-                           │
-                           ▼
-                    ┌─────────────┐     ┌─────────────┐
+┌───────────────────────────────────────────────────────────┐
+│                    CAMADA DE SENSORES                     │
+│  ESP32, Raspberry Pi, Arduino, Node-RED, Sensores IoT     │
+└─────────────────────┬─────────────────────────────────────┘
+                      │ MQTT (porta 1883 dev / 8883 prod)
+                      ▼
+┌─────────────────────────────────────────────────────────┐
+│              🔌 Eclipse Mosquitto (Broker)              │
+│  Autenticação obrigatória | SSL/TLS em produção         │
+└──────────┬──────────────────────────────┬───────────────┘
+           │                              │
+           │                              ▼
+           │                    ┌──────────────────────┐
+           │                    │   📊 Grafana 10.3    │
+           │                    │   Dashboards Live     │
+           │                    └──────────────────────┘
+           │                              ▲
+           ▼                              │
+┌──────────────────────┐     ┌───────────┴──────────────┐
+│  📡 Telegraf 1.29    │────▶│   💾 InfluxDB 2.x        │
+│  MQTT → InfluxDB     │     │   Séries Temporais       │
+└──────────────────────┘     └───────────┬──────────────┘
+                                         │
+                                         ▼
+                              ┌────────────────────────┐
+                              │  🤖 Analytics Python   │
+                              │  Processamento & Regras│
+                              └────────────────────────┘
+                                         │
+                                         ▼
+                              ┌────────────────────────┐
+                              │  💾 Backup Automático  │
+                              │  Local + Remoto        │
+                              └────────────────────────┘
+```
+
+### Fluxo de Dados
+
+1. **Coleta:** Sensores enviam dados via MQTT para o Mosquitto
+2. **Roteamento:** Telegraf consome mensagens do tópico `mov/dados/#`
+3. **Armazenamento:** Dados gravados no InfluxDB com tags e fields
+4. **Visualização:** Grafana consulta InfluxDB e renderiza dashboards
+5. **Processamento:** Analytics lê InfluxDB, processa regras e grava insights
+6. **Proteção:** Backup diário compacta dados de Grafana e InfluxDB
+
+---
+
+## 🛠️ Stack Tecnológica
+
+| Componente            | Versão | Função                             | Porta                        |
+| --------------------- | ------ | ---------------------------------- | ---------------------------- |
+| **Eclipse Mosquitto** | 2.x    | Broker MQTT com TLS                | 1883 (dev), 8883 (prod)      |
+| **InfluxDB**          | 2.x    | Banco de dados de séries temporais | 8086                         |
+| **Telegraf**          | 1.29   | Coletor MQTT → InfluxDB            | -                            |
+| **Grafana**           | 10.3.3 | Visualização e dashboards          | 3000 (dev), via Nginx (prod) |
+| **Python**            | 3.11+  | Processamento analítico            | -                            |
+| **Nginx**             | Alpine | Proxy reverso com SSL              | 80, 443                      |
+| **Docker**            | 24+    | Orquestração de containers         | -                            |
+| **Rclone**            | Latest | Backup remoto criptografado        | -                            |
+
+**Diferenciais:**
+
+- ✅ Usuários não-root em todos os containers
+- ✅ Health checks com restart automático
+- ✅ Separação dev/prod com overlays Docker Compose
+- ✅ Volumes persistentes para dados críticos
+
+---
+
                     │  InfluxDB   │◀────│  Analytics  │
                     │   (Dados)   │     │   (Python)  │
                     └──────┬──────┘     └─────────────┘
@@ -67,7 +188,8 @@ A **MOV Platform** é uma solução completa para monitoramento de dados industr
                     │   Grafana   │
                     │ (Dashboards)│
                     └─────────────┘
-```
+
+````
 
 ## 🔧 Pré-requisitos
 
@@ -94,7 +216,7 @@ docker compose up -d
 
 # 4. Verifique se está tudo rodando
 docker compose ps
-```
+````
 
 **Pronto!** 🎉 A plataforma está funcionando. Acesse:
 
@@ -297,91 +419,101 @@ Sistema de backup automatizado que:
 - Salva em `./backups/`
 - Remove backups com mais de 7 dias automaticamente
 
-## 💾 Backup Automático
+## 💾 Backup e Segurança
 
-Os backups são criados automaticamente a cada 24 horas em:
+### Sistema de Backup Multi-Camada
 
-```
-backups/
-├── grafana_20260202_153045.tar.gz
-└── influxdb_20260202_153045.tar.gz
-```
+A MOV Platform implementa **proteção de dados profissional** com dupla camada de backup:
 
-### Restaurar um Backup
+#### 🔵 Camada 1: Backup Local Automático
+
+- **Frequência:** Diário às 1h AM
+- **Conteúdo:** Dados completos de Grafana e InfluxDB
+- **Formato:** `.tar.gz` comprimido
+- **Retenção:** 7 dias (limpeza automática)
+- **Localização:** `./backups/`
 
 ```bash
-# Parar os serviços
+# Backups gerados automaticamente
+backups/
+├── grafana_20250202_010000.tar.gz
+└── influxdb_20250202_010000.tar.gz
+```
+
+#### 🔵 Camada 2: Backup Remoto Criptografado (Opcional)
+
+- **Frequência:** Diário às 2h AM
+- **Provedores suportados:**
+  - Google Drive (15GB grátis)
+  - MEGA (20GB grátis)
+  - OneDrive (5GB grátis)
+  - Dropbox (2GB grátis)
+- **Criptografia:** AES-256 em trânsito via Rclone
+- **Retenção:** 30 dias
+- **Senhas:** Armazenadas em `.env` (256 bits de entropia)
+
+**Configurar backup remoto:**
+
+```bash
+bash scripts/setup_remote_backup.sh
+# Menu interativo com 4 opções de provedor
+# Criptografia opcional (recomendado)
+```
+
+### Segurança Implementada
+
+| Camada           | Proteção                             | Status      |
+| ---------------- | ------------------------------------ | ----------- |
+| **Rede**         | Firewall UFW (script automatizado)   | ✅ Produção |
+| **Transporte**   | TLS 1.2+ (MQTT 8883, HTTPS 443)      | ✅ Produção |
+| **Autenticação** | Credenciais fortes (256-512 bits)    | ✅ Dev/Prod |
+| **Backup**       | AES-256 + armazenamento redundante   | ✅ Opcional |
+| **Containers**   | Usuários não-root, health checks     | ✅ Dev/Prod |
+| **Certificados** | Let's Encrypt + renovação automática | ✅ Produção |
+
+**Para relatório completo de segurança**, consulte [SECURITY-REPORT.md](SECURITY-REPORT.md)
+
+**Pontuação de segurança:** 92/100 ⭐⭐⭐⭐⭐
+
+### Restauração de Backup
+
+```bash
+# Parar containers
 sudo docker compose down
 
-# Extrair backup do Grafana
+# Restaurar arquivos
 tar xzf backups/grafana_YYYYMMDD_HHMMSS.tar.gz -C grafana/data/
-
-# Extrair backup do InfluxDB
 tar xzf backups/influxdb_YYYYMMDD_HHMMSS.tar.gz -C influxdb/data/
+
+# Corrigir permissões
+sudo chown -R 472:472 grafana/data/
+sudo chown -R 1000:1000 influxdb/data/
 
 # Reiniciar
 sudo docker compose up -d
 ```
 
-## 🛠️ Desenvolvimento
+**Tempo de recuperação (RTO):** ~30 minutos  
+**Ponto de recuperação (RPO):** Até 24 horas
 
-### Estrutura do Projeto
+---
 
-```
-MOV-Plataform/
-├── docker-compose.yml        # Orquestração dos serviços
-├── .env                       # Variáveis de ambiente (não versionado)
-├── analytics/                 # Serviço de processamento Python
-│   ├── Dockerfile
-│   ├── main.py
-│   └── requirements.txt
-├── mosquitto/                 # Configurações MQTT
-│   ├── config/
-│   │   ├── mosquitto.conf
-│   │   └── passwd
-│   ├── data/                  # Dados persistidos
-│   └── log/                   # Logs do broker
-├── telegraf/                  # Configurações do coletor
-│   └── config/
-│       └── telegraf.conf
-├── influxdb/                  # Dados e configurações do banco
-│   ├── config/
-│   └── data/
-├── grafana/                   # Dashboards e configurações
-│   └── data/
-└── backups/                   # Backups automáticos
-```
+## � Documentação Completa
 
-### Modificar o Analytics
+A MOV Platform oferece **documentação de nível comercial** para todas as etapas:
 
-1. Edite `analytics/main.py`
-2. Reconstrua o container:
+| Arquivo                                                                    | Conteúdo                                      | Público-Alvo                |
+| -------------------------------------------------------------------------- | --------------------------------------------- | --------------------------- |
+| **[README.md](README.md)**                                                 | Visão geral, quick start, arquitetura         | Desenvolvedores, gestores   |
+| **[SECURITY-REPORT.md](SECURITY-REPORT.md)**                               | Análise completa de segurança (92/100)        | CISO, auditores, arquitetos |
+| **[instructions/DEPLOY.md](instructions/DEPLOY.md)**                       | Guia passo a passo de deploy em VPS           | DevOps, sysadmins           |
+| **[instructions/DEV-WORKFLOW.md](instructions/DEV-WORKFLOW.md)**           | Workflow de desenvolvimento local e em equipe | Desenvolvedores             |
+| **[instructions/UPDATES.md](instructions/UPDATES.md)**                     | Procedimentos de atualização e manutenção     | DevOps                      |
+| **[instructions/MQTT-CERT-RENEWAL.md](instructions/MQTT-CERT-RENEWAL.md)** | Gerenciamento de certificados MQTT            | Sysadmins                   |
 
-```bash
-sudo docker compose up -d --build analytics
-```
+**Destaque:** Todos os guias incluem exemplos práticos, comandos testados e troubleshooting.
 
-### Adicionar Dependências Python
-
-1. Adicione no `analytics/requirements.txt`
-2. Reconstrua:
-
-```bash
-sudo docker compose up -d --build analytics
-```
-
-### Verificar Status dos Containers
-
-```bash
-sudo docker compose ps
-```
-
-### Acessar Shell de um Container
-
-```bash
-sudo docker exec -it mov_analytics sh
-sudo docker exec -it mov_influx bash
-```
+---
 
 ## 🔐 Segurança
 

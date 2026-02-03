@@ -1,37 +1,49 @@
-# 🔄 Workflow de Desenvolvimento e Atualização
+# 🔄 MOV Platform - Guia de Atualizações
 
-## 📋 Cenários Comuns de Atualização
-
-### 1️⃣ Mudança no Dashboard do Grafana
-
-### 2️⃣ Alteração no código Python (Analytics)
-
-### 3️⃣ Novo dispositivo IoT (configuração Telegraf)
-
-### 4️⃣ Mudança no Mosquitto
+**Procedimentos para atualizar código, configurações e containers em desenvolvimento e produção.**
 
 ---
 
-## 🔄 Workflow Completo (Git + VPS)
+## 📋 Visão Geral
 
-### **⚠️ ANTES DE ATUALIZAR NA VPS: Backup de Segurança**
+### O Que Este Guia Cobre
 
-**SEMPRE faça backup antes de aplicar mudanças em produção:**
+✅ Diferentes tipos de atualizações  
+✅ Procedimentos por ambiente (dev/prod)  
+✅ **Backup obrigatório** antes de atualizar produção  
+✅ Comandos rápidos para cenários comuns  
+✅ Troubleshooting de atualizações
+
+### ⚠️ Regra de Ouro
+
+**SEMPRE faça backup antes de atualizar PRODUÇÃO:**
 
 ```bash
-# Backup manual imediato
+# Executar backup manual imediato
 sudo /usr/local/bin/mov_remote_backup.sh
 
-# OU esperar o backup automático (se configurou backup remoto)
-# Backup local: 1h da manhã
-# Backup remoto: 2h da manhã
+# OU aguardar backup automático:
+# - Backup local: 1h da manhã
+# - Backup remoto: 2h da manhã
 ```
 
 **Se algo der errado, você pode restaurar! 🛟**
 
 ---
 
-### **FASE 1: Desenvolvimento Local**
+## 🎯 Tipos de Atualização
+
+### Escolha o Cenário Correspondente
+
+| Cenário                              | Ir Para                                                                |
+| ------------------------------------ | ---------------------------------------------------------------------- |
+| Mudança no código Python (Analytics) | [Atualizar Analytics](#a-mudan%C3%A7a-no-c%C3%B3digo-python-analytics) |
+| Mudança em Dashboard Grafana         | [Atualizar Grafana](#b-mudan%C3%A7a-no-grafana-dashboards)             |
+| Novo dispositivo IoT (Telegraf)      | [Adicionar Dispositivo](#c-adicionar-novo-dispositivo-iot-telegraf)    |
+| Mudança no Mosquitto                 | [Atualizar Mosquitto](#d-mudan%C3%A7a-no-mosquitto)                    |
+| Atualizar tudo de uma vez            | [Update Completo](#%E2%9A%A1-atalhos-r%C3%A1pidos)                     |
+
+---
 
 ```bash
 # 1. Fazer mudanças no código
