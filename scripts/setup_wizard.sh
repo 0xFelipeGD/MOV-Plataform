@@ -472,6 +472,24 @@ print_warning "Mantenha o arquivo .env seguro e não commite no Git!"
 
 echo ""
 echo -e "${BLUE}========================================${NC}"
-echo -e "${GREEN}   Boa sorte com sua plataforma IoT!${NC}"
+echo -e "${GREEN}   Iniciando Deploy Automático...${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
+
+# Executar deploy automaticamente
+if [ -f "$PROJECT_DIR/scripts/deploy.sh" ]; then
+    bash "$PROJECT_DIR/scripts/deploy.sh"
+else
+    print_error "Script de deploy não encontrado!"
+    exit 1
+fi
+
+echo ""
+echo -e "${BLUE}========================================${NC}"
+echo -e "${GREEN}   Setup e Deploy Concluídos!${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo ""
+echo -e "${GREEN}✅ Plataforma MOV está rodando!${NC}"
+echo ""
+echo "Verificar status:"
+echo "  ${YELLOW}docker compose ps${NC}"

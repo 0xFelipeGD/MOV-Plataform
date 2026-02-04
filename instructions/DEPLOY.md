@@ -173,7 +173,7 @@ ls -la
 ### 4.2. Executar Setup Wizard
 
 ```bash
-# Executar wizard interativo
+# Executar wizard interativo (faz setup + deploy automático)
 bash scripts/setup_wizard.sh
 ```
 
@@ -201,12 +201,15 @@ Etapa 3/3: Configurações Específicas
   Intervalo de processamento (segundos): 10
 ```
 
-✅ **O wizard criará:**
+✅ **O wizard faz automaticamente:**
 
-- Arquivo `.env` com credenciais seguras
-- Estrutura de diretórios
-- Configuração de permissões
-- Arquivo de configuração `.setup_config`
+- Cria arquivo `.env` com credenciais seguras
+- Cria estrutura de diretórios
+- Configura permissões
+- **Executa o deploy automaticamente**
+- Inicia todos os containers
+
+🔒 **IMPORTANTE:** Anote as credenciais exibidas durante o setup!
 
 ### 4.3. Verificar Arquivo .env
 
@@ -221,31 +224,26 @@ cat .env
 # GRAFANA_PASSWORD=pL3m4...
 ```
 
-🔒 **IMPORTANTE:** Anote essas credenciais em local seguro!
+🔒 **IMPORTANTE:** Anote as credenciais exibidas durante o setup!
+
+### 4.3. Verificar Arquivo .env
+
+```bash
+# Ver credenciais geradas
+cat .env
+
+# Exemplo de saída:
+# MQTT_USER=admin_a1b2c3d4
+# MQTT_PASSWORD=xQ9k7...
+# INFLUX_TOKEN=8s9k2...
+# GRAFANA_PASSWORD=pL3m4...
+```
 
 ---
 
-## 🚀 FASE 5: Deploy da Aplicação
+## 🚀 FASE 5: Verificar Deploy
 
-### 5.1. Executar Deploy
-
-```bash
-# Executar script de deploy
-bash scripts/deploy.sh
-```
-
-**O que acontece:**
-
-1. ✅ Verifica Docker e Docker Compose
-2. ✅ Valida arquivo .env
-3. ✅ Para containers antigos (se existirem)
-4. ✅ Gera certificados SSL autoassinados (temporários)
-5. ✅ Configura Mosquitto para SSL
-6. ✅ Ajusta permissões dos diretórios
-7. ✅ Inicia containers em modo produção
-8. ✅ Aguarda serviços ficarem prontos
-
-### 5.2. Verificar Containers
+### 5.1. Verificar Containers
 
 ```bash
 # Ver status de todos os containers
@@ -385,8 +383,20 @@ No Grafana:
 ```
 Query Language: Flux
 URL: http://influxdb:8086
-Organization: mov_org
-Token: (copiar do .env, variável INFLUX_TOKEN)
+
+Auth:
+  Basic auth: ❌ DESLIGADO (OFF)
+  
+InfluxDB Details:
+  Organization: (copiar do .env, variável INFLUX_ORG)
+  Token: (copiar do .env, variável INFLUX_TOKEN)
+  Default Bucket: (copiar do .env, variável INFLUX_BUCKET)
+  Min time interval: 10s (opcional)
+```
+
+**Para ver suas credenciais no servidor:**
+```bash
+cat .env | grep INFLUX
 ```
 
 4. **Save & Test** → Deve aparecer "Data source is working"
