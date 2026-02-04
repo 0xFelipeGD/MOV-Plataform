@@ -35,11 +35,13 @@ show_usage() {
     echo "  -n, --lines N   - Mostrar últimas N linhas (padrão: 100)"
     echo "  --no-follow     - Mostrar logs sem seguir"
     echo "  -t, --tail      - Apenas seguir novos logs"
+    echo "  --ps            - Mostrar status dos containers (docker compose ps)"
     echo ""
     echo "Exemplos:"
     echo "  ./logs.sh mosquitto           # Logs do Mosquitto em tempo real"
     echo "  ./logs.sh all -n 50           # Últimas 50 linhas de todos"
     echo "  ./logs.sh influxdb --no-follow # Logs do InfluxDB sem seguir"
+    echo "  ./logs.sh --ps                # Ver status dos containers"
     echo "  ./logs.sh                     # Menu interativo"
 }
 
@@ -72,9 +74,10 @@ interactive_menu() {
     echo "  5) Grafana"
     echo "  6) Analytics"
     echo "  7) Nginx"
+    echo "  8) Ver status dos containers (docker compose ps)"
     echo "  0) Sair"
     echo ""
-    read -p "Escolha [1-7]: " choice
+    read -p "Escolha [0-8]: " choice
     
     case $choice in
         1) CONTAINER="all" ;;
@@ -84,6 +87,14 @@ interactive_menu() {
         5) CONTAINER="grafana" ;;
         6) CONTAINER="analytics" ;;
         7) CONTAINER="nginx" ;;
+        8) 
+            echo ""
+            echo -e "${GREEN}=== Status dos Containers ===${NC}"
+            echo ""
+            docker compose ps
+            echo ""
+            exit 0
+            ;;
         0) exit 0 ;;
         *) echo "Opção inválida"; exit 1 ;;
     esac
@@ -112,6 +123,17 @@ if [ $# -eq 0 ]; then
     interactive_menu
 else
     # Modo command-line
+    
+    # Verificar se é comando --ps primeiro
+    if [ "$1" == "--ps" ]; then
+        check_running
+        echo -e "${GREEN}=== Status dos Containers ===${NC}"
+        echo ""
+        docker compose ps
+        echo ""
+        exit 0
+    fi
+    
     CONTAINER=$1
     shift
     
@@ -136,6 +158,14 @@ else
             -t|--tail)
                 TAIL_ONLY=true
                 shift
+                ;;
+            --ps)
+                check_running
+                echo -e "${GREEN}=== Status dos Containers ===${NC}"
+                echo ""
+                docker compose ps
+                echo ""
+                exit 0
                 ;;
             *)
                 echo "Opção desconhecida: $1"
