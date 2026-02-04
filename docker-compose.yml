@@ -20,6 +20,24 @@ services:
       - MQTT_PASSWORD=${MQTT_PASSWORD}
     # EXECUÇÃO: Usa o 'sh' para rodar o script (evita erro de permissão chmod)
     entrypoint: ["sh", "/docker-entrypoint.sh"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mosquitto_sub",
+          "-t",
+          "$$SYS/#",
+          "-C",
+          "1",
+          "-i",
+          "healthcheck",
+          "-W",
+          "3",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
 
   # 2. BANCO DE DADOS
   influxdb:
@@ -61,8 +79,10 @@ services:
       - MQTT_USER=${MQTT_USER}
       - MQTT_PASSWORD=${MQTT_PASSWORD}
     depends_on:
-      - mosquitto
-      - influxdb
+      mosquitto:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "telegraf", "--test"]
       interval: 60s
@@ -84,7 +104,8 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
     depends_on:
-      - influxdb
+      influxdb:
+        condition: service_healthy
     healthcheck:
       test:
         [

@@ -25,6 +25,7 @@ config/credentials.json
 # Nginx SSL e logs
 nginx/ssl/
 nginx/logs/
+.setup_config
 
 # Python
 __pycache__/
