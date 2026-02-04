@@ -77,14 +77,14 @@ cp nginx/conf.d/default.conf nginx/conf.d/default.conf.bak
 
 # Descomentar bloco 1: Redirecionamento HTTP -> HTTPS
 sed -i '/^# # Redireciona HTTP para HTTPS/,/^# }$/ {
-    s/^# # Redireciona/# Redireciona/
+    /^# # Redireciona HTTP para HTTPS$/d
     s/^# \(.\)/\1/
     s/grafana\.seudominio\.com/'"$DOMAIN"'/g
 }' nginx/conf.d/default.conf
 
 # Descomentar bloco 2: Server HTTPS completo
 sed -i '/^# # Grafana - HTTPS/,/^# }$/ {
-    s/^# # Grafana/# Grafana/
+    /^# # Grafana - HTTPS (Produção)$/d
     s/^# \(.\)/\1/
     s/grafana\.seudominio\.com/'"$DOMAIN"'/g
 }' nginx/conf.d/default.conf
