@@ -208,6 +208,33 @@ docker compose logs
 
 ---
 
+### **Visualizar logs dos containers**
+
+Use o script `logs.sh` para facilitar a visualização:
+
+```bash
+# Modo interativo (menu)
+./scripts/logs.sh
+
+# Ver logs de um container específico
+./scripts/logs.sh mosquitto
+./scripts/logs.sh influxdb
+./scripts/logs.sh grafana
+
+# Ver logs de todos os containers
+./scripts/logs.sh all
+
+# Ver últimas 200 linhas sem seguir em tempo real
+./scripts/logs.sh analytics -n 200 --no-follow
+
+# Apenas novos logs (tail)
+./scripts/logs.sh telegraf -t
+```
+
+**Atalho rápido:** Execute sem argumentos para menu interativo!
+
+---
+
 ### **Fazer mudanças no código**
 
 #### **Exemplo 1: Editar código Python (Analytics)**
@@ -223,7 +250,8 @@ nano analytics/main.py
 docker compose up -d --build analytics
 
 # 4. Ver logs para verificar
-docker compose logs -f analytics
+./scripts/logs.sh analytics
+# ou: docker compose logs -f analytics
 
 # 5. Se funcionar, parar os logs (Ctrl+C) e continuar
 ```
@@ -293,13 +321,16 @@ docker compose up -d
 ### Container fica reiniciando (restart loop)
 
 ```bash
-# Ver o que está acontecendo
-docker compose logs <nome-do-container>
+# Ver o que está acontecendo (usando script)
+./scripts/logs.sh <nome-do-container>
 
 # Exemplos:
+./scripts/logs.sh mosquitto
+./scripts/logs.sh influxdb
+./scripts/logs.sh telegraf
+
+# Ou usando docker compose diretamente:
 docker compose logs mosquitto
-docker compose logs influxdb
-docker compose logs telegraf
 ```
 
 ---

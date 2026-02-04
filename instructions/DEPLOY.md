@@ -269,13 +269,15 @@ mov_nginx         Up (healthy)    0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp
 ### 5.3. Verificar Logs (se necessário)
 
 ```bash
-# Ver logs de todos os serviços
-docker compose logs -f
+# Modo recomendado: usar script logs.sh
+./scripts/logs.sh              # Menu interativo
+./scripts/logs.sh all          # Todos os serviços
+./scripts/logs.sh grafana      # Serviço específico
+./scripts/logs.sh mosquitto    # MQTT
 
-# Ver log específico
-docker compose logs -f grafana
-docker compose logs -f mosquitto
-docker compose logs -f influxdb
+# Ou usar docker compose diretamente:
+docker compose logs -f         # Todos os serviços
+docker compose logs -f grafana # Serviço específico
 
 # Pressione CTRL+C para sair
 ```
@@ -564,7 +566,12 @@ ssh -L 8086:localhost:8086 root@203.45.67.89
 ### Comandos Úteis
 
 ```bash
-# Ver logs
+# Ver logs (recomendado: usar script)
+./scripts/logs.sh              # Menu interativo
+./scripts/logs.sh [serviço]    # Serviço específico
+./scripts/logs.sh all -n 100   # Últimas 100 linhas de todos
+
+# Ver logs (alternativa: docker compose)
 docker compose logs -f [serviço]
 
 # Reiniciar serviço específico
