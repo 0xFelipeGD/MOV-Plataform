@@ -193,13 +193,42 @@ Etapa 2/3: Componentes para Instalar
   Backup automático? [Y/n]: Y
 
 Etapa 3/3: Configurações Específicas
-  Domínio para Grafana: grafana.seudominio.com
-  Domínio para MQTT: mqtt.seudominio.com
-  (ou pressione Enter para pular e configurar depois)
 
-  Limite de temperatura (°C): 30.0
-  Intervalo de processamento (segundos): 10
+  A) Domínios (para SSL/Let's Encrypt):
+     - Domínio para Grafana: grafana.seudominio.com
+     - Domínio para MQTT: mqtt.seudominio.com
+     ⚠️ PODE PULAR (Enter): Configure depois se ainda não tiver DNS apontado
+
+  B) Configurações do Analytics (processamento em tempo real):
+     - Limite de temperatura (°C): 30.0
+       → Temperatura acima disso gera alerta no log
+     - Intervalo de processamento (segundos): 10
+       → A cada 10s o Analytics processa novos dados
 ```
+
+**💡 Explicação da Etapa 3:**
+
+**A) Domínios (opcional neste momento):**
+
+- Se você **já configurou o DNS** (Fase 6), informe os domínios aqui
+- Se **ainda não configurou DNS**, apenas pressione Enter para pular
+- Você pode configurar SSL depois com: `bash scripts/setup_ssl.sh seu-dominio.com`
+
+**B) Analytics (processamento automático):**
+
+- **Limite de temperatura:** Valor em °C para detectar anomalias (ex: 30.0)
+  - Quando sensor enviar temperatura > 30°C, o Analytics registra alerta
+- **Intervalo:** A cada quantos segundos o Analytics verifica novos dados
+  - Recomendado: 10 segundos (não sobrecarrega, mas é responsivo)
+
+**📌 DICA:** Em produção, você pode pular os domínios agora e configurar assim:
+
+1. Execute o wizard SEM informar domínios (Enter para pular)
+2. Configure DNS (Fase 6)
+3. Aguarde propagação
+4. Execute: `bash scripts/setup_ssl.sh grafana.seudominio.com`
+
+````
 
 ✅ **O wizard faz automaticamente:**
 
@@ -222,7 +251,7 @@ cat .env
 # MQTT_PASSWORD=xQ9k7...
 # INFLUX_TOKEN=8s9k2...
 # GRAFANA_PASSWORD=pL3m4...
-```
+````
 
 🔒 **IMPORTANTE:** Anote as credenciais exibidas durante o setup!
 
@@ -386,7 +415,7 @@ URL: http://influxdb:8086
 
 Auth:
   Basic auth: ❌ DESLIGADO (OFF)
-  
+
 InfluxDB Details:
   Organization: (copiar do .env, variável INFLUX_ORG)
   Token: (copiar do .env, variável INFLUX_TOKEN)
@@ -395,6 +424,7 @@ InfluxDB Details:
 ```
 
 **Para ver suas credenciais no servidor:**
+
 ```bash
 cat .env | grep INFLUX
 ```
