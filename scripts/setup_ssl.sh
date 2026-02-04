@@ -75,12 +75,22 @@ echo "Atualizando nginx/conf.d/default.conf..."
 # Fazer backup
 cp nginx/conf.d/default.conf nginx/conf.d/default.conf.bak
 
-# Descomentar bloco de redirecionamento HTTP -> HTTPS
-sed -i 's/^# # Redireciona HTTP para HTTPS/# Redireciona HTTP para HTTPS/' nginx/conf.d/default.conf
-sed -i '/^# # Redireciona/,/^# }/ { /^# server {/,/^# }/ { s/^# //; s/grafana\.seudominio\.com/'"$DOMAIN"'/g; } }' nginx/conf.d/default.conf
+# Descomentar bloco 1: Redirecionamento HTTP -> HTTPS
+sed -i '/^# # Redireciona HTTP para HTTPS/,/^# }$/ {
+    s/^# # Redireciona/# Redireciona/
+    s/^# \(.\)/\1/
+    s/grafana\.seudominio\.com/'"$DOMAIN"'/g
+}' nginx/conf.d/default.conf
 
-# Descomentar bloco HTTPS
-sed -i '/^# # Grafana - HTTPS/,/^# }$/ { s/^# //; s/grafana\.seudominio\.com/'"$DOMAIN"'/g; }' nginx/conf.d/default.conf
+# Descomentar bloco 2: Server HTTPS completo
+sed -i '/^# # Grafana - HTTPS/,/^# }$/ {
+    s/^# # Grafana/# Grafana/
+    s/^# \(.\)/\1/
+    s/grafana\.seudominio\.com/'"$DOMAIN"'/g
+}' nginx/conf.d/default.conf
+
+# Remover linhas com apenas "#" (linhas vazias que eram "# ")
+sed -i '/^#$/d' nginx/conf.d/default.conf
 
 echo "✓ Configuração atualizada (backup salvo)"
 echo ""

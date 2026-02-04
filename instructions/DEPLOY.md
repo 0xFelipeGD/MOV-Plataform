@@ -332,44 +332,23 @@ bash scripts/setup_ssl.sh grafana.seudominio.com
 2. Valida DNS
 3. Para Nginx temporariamente
 4. Obtém certificado Let's Encrypt
-5. Configura renovação automática
-6. Gera certificados para Mosquitto
-7. Reinicia serviços
+5. **Atualiza automaticamente** nginx/conf.d/default.conf (descomenta HTTPS e substitui domínio)
+6. Copia certificados para Mosquitto
+7. Configura renovação automática
+8. Reinicia serviços
 
-### 7.2. Atualizar Configuração Nginx
+✅ **Tudo é feito automaticamente!** O script já descomenta HTTPS e substitui o domínio.
 
-```bash
-# Editar arquivo de configuração
-nano nginx/conf.d/default.conf
-```
-
-**Modificar:**
-
-1. Descomentar bloco HTTPS (linhas 46-105)
-2. Trocar `grafana.seudominio.com` pelo seu domínio real
-3. Salvar: `CTRL+O`, Enter, `CTRL+X`
-
-**OU fazer via sed:**
+### 7.2. Verificar Configuração Nginx
 
 ```bash
-# Substituir domínio automaticamente
-sed -i 's/grafana.seudominio.com/grafana.exemplo.com/g' nginx/conf.d/default.conf
+# Ver configuração atualizada
+cat nginx/conf.d/default.conf | grep -A5 "listen 443"
 
-# Descomentar bloco HTTPS
-sed -i '/^# server {/,/^# }/s/^# //' nginx/conf.d/default.conf
+# Deve mostrar o bloco HTTPS descomentado com seu domínio
 ```
 
-### 7.3. Reiniciar Nginx
-
-```bash
-# Reiniciar apenas o Nginx
-docker compose restart nginx
-
-# Verificar se subiu corretamente
-docker compose logs nginx
-```
-
-### 7.4. Testar HTTPS
+### 7.3. Testar HTTPS
 
 ```bash
 # Testar do servidor
