@@ -103,23 +103,27 @@ fi
 echo ""
 
 # Atualizar configuração do Mosquitto para usar SSL
-echo -e "${YELLOW}[5/8] Configurando Mosquitto para SSL...${NC}"
+echo "[5/6] Configurando Mosquitto para SSL..."
 
 if ! grep -q "listener 8883" mosquitto/config/mosquitto.conf 2>/dev/null; then
-    echo -e "${YELLOW}⚠️  Adicionando configuração SSL ao mosquitto.conf${NC}"
+    print_warning "Adicionando configuração SSL ao mosquitto.conf"
     cat >> mosquitto/config/mosquitto.conf <<EOF
 
-# SSL/TLS Configuration
+# =============================================================================
+# SSL/TLS Configuration (Adicionado automaticamente por deploy.sh)
+# =============================================================================
 listener 8883
 protocol mqtt
 cafile /mosquitto/certs/ca.crt
 certfile /mosquitto/certs/server.crt
 keyfile /mosquitto/certs/server.key
 require_certificate false
+allow_anonymous false
+password_file /mosquitto/config/passwd
 EOF
-    echo -e "${GREEN}✅ Configuração SSL adicionada${NC}"
+    print_success "Configuração SSL adicionada"
 else
-    echo -e "${GREEN}✅ Mosquitto já configurado para SSL${NC}"
+    print_success "Mosquitto já configurado para SSL"
 fi
 echo ""
 
