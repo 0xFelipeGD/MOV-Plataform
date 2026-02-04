@@ -1,0 +1,123 @@
+# ==============================================================================
+# Setup Wizard - Demonstração Visual
+# ==============================================================================
+# Este arquivo mostra como é a experiência de usar o Setup Wizard
+
+$ bash scripts/setup_wizard.sh
+
+    __  ________ _    __   ____  __      __  ____                 
+   /  |/  / __ \ |  / /  / __ \/ /___ _/ /_/ __/___  _________ ___
+  / /|_/ / / / / | / /  / /_/ / / __ `/ __/ /_/ __ \/ ___/ __ `__ \
+ / /  / / /_/ /| |/ /  / ____/ / /_/ / /_/ __/ /_/ / /  / / / / / /
+/_/  /_/\____/ |___/  /_/   /_/\__,_/\__/_/  \____/_/  /_/ /_/ /_/ 
+
+                   Setup Wizard - Configuração Interativa
+
+
+========================================
+  Etapa 1/3: Escolha o Ambiente
+========================================
+
+Selecione o tipo de ambiente para deploy:
+
+  1) Desenvolvimento
+     • Todas as portas expostas (fácil acesso)
+     • Sem SSL/TLS
+     • Ideal para: Testes locais no seu PC
+
+  2) Staging
+     • Portas seletivas expostas
+     • SSL opcional
+     • Ideal para: Homologação e testes
+
+  3) Produção
+     • Apenas portas essenciais (80, 443, 8883)
+     • SSL obrigatório
+     • Firewall configurado
+     • Ideal para: Deploy em VPS
+
+Escolha [1-3]: 1
+✓ Ambiente: Desenvolvimento
+
+========================================
+  Etapa 2/3: Selecione os Componentes
+========================================
+
+Escolha quais serviços deseja instalar:
+
+ℹ Pressione Enter para aceitar o padrão [Y/n]
+
+  📊 Grafana (Dashboards de visualização)? [Y/n]: 
+  💾 InfluxDB (Banco de dados de séries temporais)? [Y/n]: 
+  🔌 Mosquitto (Broker MQTT para IoT)? [Y/n]: 
+  📡 Telegraf (Coletor MQTT → InfluxDB)? [Y/n]: 
+  🤖 Analytics (Processamento Python em tempo real)? [Y/n]: 
+  🌐 Nginx (Proxy reverso com SSL)? [y/N]: n
+  💾 Sistema de Backup automático? [Y/n]: 
+
+✓ Componentes selecionados!
+
+========================================
+  Etapa 3/3: Configurações Específicas
+========================================
+
+Configurações do Analytics:
+  Limite de temperatura (°C) para alertas [30.0]: 35
+  Intervalo de processamento (segundos) [10]: 
+
+========================================
+  Resumo da Configuração
+========================================
+
+Ambiente: development
+
+Componentes:
+  ✓ Grafana
+  ✓ InfluxDB
+  ✓ Mosquitto (MQTT)
+  ✓ Telegraf
+  ✓ Analytics (Temp: 35.0°C, Intervalo: 10s)
+  ✓ Backup automático
+
+Confirmar e continuar? [Y/n]: 
+
+========================================
+  Executando Configuração
+========================================
+
+Gerando credenciais... ✓ Credenciais geradas
+Criando estrutura de diretórios... ✓ Diretórios criados
+Configurando permissões... ✓ Permissões configuradas
+Gerando configuração Docker Compose... ✓ Configuração salva
+ℹ Arquivo docker-compose.override.yml criado (portas expostas para dev)
+
+========================================
+  Setup Concluído com Sucesso!
+========================================
+
+✓ Ambiente configurado: development
+✓ Componentes instalados: 6 de 7
+
+ℹ Próximos passos:
+
+  1. Iniciar a plataforma:
+     docker compose up -d
+
+  2. Acessar serviços:
+     • Grafana: http://localhost:3000
+     • InfluxDB: http://localhost:8086
+     • MQTT: localhost:1883
+
+  3. Ver logs:
+     docker compose logs -f
+
+ℹ Senhas e tokens estão no arquivo: .env
+⚠ Mantenha o arquivo .env seguro e não commite no Git!
+
+========================================
+   Boa sorte com sua plataforma IoT!
+========================================
+
+# ==============================================================================
+# Resultado: Setup completo em menos de 2 minutos!
+# ==============================================================================

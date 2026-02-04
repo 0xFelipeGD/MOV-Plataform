@@ -6,12 +6,13 @@ Guias completos para desenvolvimento, deploy, operação e manutenção da plata
 
 ## 📋 Índice de Guias
 
-| Guia                                             | Descrição                          | Quando Usar                                |
-| ------------------------------------------------ | ---------------------------------- | ------------------------------------------ |
-| **[DEPLOY.md](DEPLOY.md)**                       | Deploy completo em VPS (produção)  | Primeira vez subindo para produção         |
-| **[DEV-WORKFLOW.md](DEV-WORKFLOW.md)**           | Workflow de desenvolvimento local  | Começar a desenvolver, trabalhar em equipe |
-| **[UPDATES.md](UPDATES.md)**                     | Atualizar código e containers      | Aplicar mudanças em dev ou produção        |
-| **[MQTT-CERT-RENEWAL.md](MQTT-CERT-RENEWAL.md)** | Gerenciamento de certificados MQTT | Troubleshooting de certificados            |
+| Guia                                                                        | Descrição                          | Quando Usar                                |
+| --------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------ |
+| **[../scripts/SETUP-WIZARD-GUIDE.md](../scripts/SETUP-WIZARD-GUIDE.md)** ⭐ | Setup Wizard Interativo            | **Primeira vez** - configuração guiada     |
+| **[DEPLOY.md](DEPLOY.md)**                                                  | Deploy completo em VPS (produção)  | Primeira vez subindo para produção         |
+| **[DEV-WORKFLOW.md](DEV-WORKFLOW.md)**                                      | Workflow de desenvolvimento local  | Começar a desenvolver, trabalhar em equipe |
+| **[UPDATES.md](UPDATES.md)**                                                | Atualizar código e containers      | Aplicar mudanças em dev ou produção        |
+| **[MQTT-CERT-RENEWAL.md](MQTT-CERT-RENEWAL.md)**                            | Gerenciamento de certificados MQTT | Troubleshooting de certificados            |
 
 ---
 

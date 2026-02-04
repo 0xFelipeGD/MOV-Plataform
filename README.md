@@ -202,6 +202,23 @@ chmod +x scripts/deploy.sh && bash scripts/deploy.sh
 
 ### Instalação Rápida (Recomendado)
 
+#### Opção 1: Setup Wizard Interativo ⭐ NOVO
+
+```bash
+# 1. Clone o repositório
+git clone <seu-repositorio>
+cd MOV-Plataform
+
+# 2. Execute o wizard interativo (escolha ambiente e componentes)
+chmod +x scripts/setup_wizard.sh
+./scripts/setup_wizard.sh
+
+# 3. Siga as instruções na tela
+# O wizard irá configurar tudo automaticamente!
+```
+
+#### Opção 2: Setup Automático (modo clássico)
+
 ```bash
 # 1. Clone o repositório
 git clone <seu-repositorio>
