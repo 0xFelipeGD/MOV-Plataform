@@ -54,16 +54,19 @@ Uma **solução self-hosted completa** para monitoramento industrial e IoT, proj
 
 ## ⚡ Início Rápido
 
-### Desenvolvimento Local (3 comandos!)
+### Setup Interativo (Recomendado! 🌟)
 
 ```bash
 # 1. Clonar e entrar no projeto
 git clone <seu-repositorio> && cd MOV-Plataform
 
-# 2. Gerar credenciais e criar estrutura
-chmod +x scripts/setup.sh && ./scripts/setup.sh
+# 2. Executar o wizard de configuração
+bash scripts/setup_wizard.sh
 
-# 3. Iniciar todos os serviços
+# 3. Seguir as instruções na tela
+# O wizard configura tudo automaticamente: ambiente, componentes e credenciais!
+
+# 4. Iniciar a plataforma
 docker compose up -d
 ```
 
@@ -217,35 +220,11 @@ chmod +x scripts/setup_wizard.sh
 # O wizard irá configurar tudo automaticamente!
 ```
 
-#### Opção 2: Setup Automático (modo clássico)
-
-```bash
-# 1. Clone o repositório
-git clone <seu-repositorio>
-cd MOV-Plataform
-
-# 2. Execute o script de setup (cria estrutura e gera credenciais automaticamente)
-chmod +x scripts/setup.sh
-./scripts/setup.sh
-
-# 3. Inicie a plataforma
-docker compose up -d
-
-# 4. Verifique se está tudo rodando
-docker compose ps
-````
-
-**Pronto!** 🎉 A plataforma está funcionando. Acesse:
-
-- **Grafana**: http://localhost:3000 (usuário: admin, senha: no arquivo `.env`)
-- **InfluxDB**: http://localhost:8086
-- **MQTT**: localhost:1883
-
 ---
 
-### Instalação Manual (Opcional)
+### Instalação Manual (Não Recomendado)
 
-Se preferir configurar manualmente:
+Se por algum motivo você não puder usar o wizard, pode criar manualmente:
 
 #### 1. Clone o repositório
 
@@ -254,19 +233,12 @@ git clone <seu-repositorio>
 cd MOV-Plataform
 ```
 
-#### 2. Gere as credenciais automaticamente
-
-```bash
-chmod +x scripts/generate_credentials.sh
-./scripts/generate_credentials.sh > .env
-```
-
-Ou crie manualmente o arquivo `.env`:
+#### 2. Crie o arquivo `.env` manualmente:
 
 ```env
 # MQTT Credentials
-MQTT_USER=seu_usuario
-MQTT_PASSWORD=sua_senha
+MQTT_USER=admin
+MQTT_PASSWORD=sua_senha_forte_aqui
 
 # InfluxDB Configuration
 INFLUX_USER=admin
@@ -314,7 +286,7 @@ O `-d` (detached) executa em segundo plano. Os serviços estarão disponíveis e
 sudo docker compose stop
 ```
 
-**O que faz:** Apenas congela os containers.  
+**O que faz:** Apenas congela os containers.
 **Vantagem:** É super rápido para ligar de novo depois.
 
 #### Opção 2: Parar e remover containers (recomendado)
@@ -390,14 +362,14 @@ mosquitto_pub -h localhost -p 1883 \
 
 ### 1. Mosquitto (MQTT Broker)
 
-**Porta:** 1883 (MQTT), 9001 (WebSocket)  
+**Porta:** 1883 (MQTT), 9001 (WebSocket)
 **Container:** `mov_broker`
 
 Broker MQTT responsável por receber dados dos sensores IoT. Configurado com autenticação obrigatória.
 
 ### 2. InfluxDB
 
-**Porta:** 8086  
+**Porta:** 8086
 **Container:** `mov_influx`
 
 Banco de dados de séries temporais otimizado para dados de IoT. Armazena todas as medições com alta performance.
@@ -410,7 +382,7 @@ Agente de coleta que consome mensagens MQTT e grava no InfluxDB automaticamente.
 
 ### 4. Grafana
 
-**Porta:** 3000  
+**Porta:** 3000
 **Container:** `mov_grafana`
 
 Plataforma de visualização com dashboards interativos. Acesse com o usuário `admin` e a senha configurada no `.env`.
@@ -510,7 +482,7 @@ sudo chown -R 1000:1000 influxdb/data/
 sudo docker compose up -d
 ```
 
-**Tempo de recuperação (RTO):** ~30 minutos  
+**Tempo de recuperação (RTO):** ~30 minutos
 **Ponto de recuperação (RPO):** Até 24 horas
 
 ---
@@ -561,3 +533,4 @@ Para dúvidas ou sugestões, abra uma issue no repositório.
 ---
 
 **MOV Platform** - Monitoramento Industrial Inteligente 🏭
+````

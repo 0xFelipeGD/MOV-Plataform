@@ -115,20 +115,25 @@ telegraf/
 
 ---
 
-### **PASSO 3: Executar setup automático**
+### **PASSO 3: Executar setup wizard**
 
 ```bash
-# Executar script de setup (cria estrutura e gera credenciais)
-chmod +x scripts/setup.sh
-./scripts/setup.sh
+# Executar wizard interativo (cria estrutura e gera credenciais)
+bash scripts/setup_wizard.sh
 ```
 
-**O que o script faz:**
+**Responda as perguntas:**
+
+- Ambiente: `1) Development`
+- Componentes: tecle `Y` para todos (padrão)
+- Configurações: pode pular domínios (Enter)
+
+**O que o wizard faz:**
 
 - ✓ Cria estrutura de diretórios necessária
-- ✓ Gera arquivo .env com credenciais seguras automaticamente
-- ✓ Configura permissões de execução
-- ✓ Valida instalação do Docker
+- ✓ Gera arquivo .env com credenciais seguras (OpenSSL)
+- ✓ Configura permissões corretas (UIDs 1883, 1000, 472)
+- ✓ Valida Docker e Docker Compose
 
 **Ver as credenciais geradas:**
 
@@ -261,9 +266,10 @@ Se você ver erros como:
 **Solução:**
 
 ```bash
-# Execute o script de correção de permissões
-chmod +x scripts/fix_permissions.sh
-sudo ./scripts/fix_permissions.sh
+# Corrigir permissões manualmente
+sudo chown -R 1883:1883 mosquitto/
+sudo chown -R 1000:1000 influxdb/
+sudo chown -R 472:472 grafana/
 
 # Reinicie os containers
 docker compose restart
@@ -276,8 +282,11 @@ docker compose restart
 **Solução:**
 
 ```bash
-# Re-executar o setup
-./scripts/setup.sh
+# Re-executar o setup wizard
+bash scripts/setup_wizard.sh
+# Escolher: Development
+
+# Iniciar containers
 docker compose up -d
 ```
 
@@ -553,11 +562,12 @@ MOV-Plataform/
 │       └── default.conf   # ← EDITAR: Configuração de domínios
 │
 ├── scripts/               # Scripts de automação
+│   ├── setup_wizard.sh    # Setup interativo (USE ESTE)
 │   ├── deploy.sh          # Deploy produção
 │   ├── update.sh          # Update rápido
-│   ├── generate_credentials.sh
-│   ├── setup_firewall.sh
-│   └── setup_ssl.sh
+│   ├── backup.sh          # Backup manual
+│   ├── setup_firewall.sh  # Firewall VPS
+│   └── setup_ssl.sh       # SSL/TLS
 │
 ├── telegraf/
 │   └── config/
@@ -568,9 +578,10 @@ MOV-Plataform/
 ├── .gitignore             # Arquivos ignorados pelo Git
 ├── .env                   # ← NÃO COMMITAR (credenciais locais)
 ├── README.md              # Documentação principal
-├── DEPLOY.md              # Guia de deploy VPS
-├── WORKFLOW.md            # Guia de atualização produção
-└── DEV-WORKFLOW.md        # ← Este arquivo (desenvolvimento)
+└── instructions/          # Guias de documentação
+    ├── DEPLOY.md          # Guia de deploy VPS
+    ├── UPDATES.md         # Guia de atualização
+    └── DEV-WORKFLOW.md    # ← Este arquivo (desenvolvimento)
 ```
 
 ---
@@ -698,7 +709,7 @@ docker compose exec analytics python -c "print('teste')"
 # Setup inicial (primeira vez)
 git clone https://github.com/seuusuario/MOV-Plataform.git
 cd MOV-Plataform
-bash scripts/generate_credentials.sh > .env
+bash scripts/setup_wizard.sh  # Escolher: Development
 docker compose up -d
 
 # Workflow diário
@@ -724,4 +735,4 @@ docker compose down
 **Dúvidas?** Veja também:
 
 - [DEPLOY.md](DEPLOY.md) - Deploy em produção
-- [WORKFLOW.md](WORKFLOW.md) - Atualizar VPS
+- [UPDATES.md](UPDATES.md) - Atualizar plataforma

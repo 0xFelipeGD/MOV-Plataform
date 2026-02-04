@@ -69,7 +69,8 @@ git push origin main
 **💡 Dica:** Se após `git pull` em outra máquina os containers não iniciarem, execute:
 
 ```bash
-./scripts/setup.sh  # Recria estrutura e credenciais se necessário
+bash scripts/setup_wizard.sh  # Recria estrutura e credenciais se necessário
+# Escolher: Development
 docker compose up -d
 ```
 

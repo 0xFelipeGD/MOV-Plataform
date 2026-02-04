@@ -60,6 +60,26 @@ echo -e "${NC}"
 echo "                   Setup Wizard - Configuração Interativa"
 echo ""
 
+# Verificações iniciais
+print_info "Verificando pré-requisitos..."
+
+# Verificar Docker
+if ! docker info > /dev/null 2>&1; then
+    print_error "Docker não está rodando ou não está instalado"
+    echo ""
+    echo "Instale com: curl -fsSL https://get.docker.com | sh"
+    exit 1
+fi
+
+# Verificar Docker Compose
+if ! command -v docker compose &> /dev/null && ! command -v docker-compose &> /dev/null; then
+    print_error "Docker Compose não encontrado"
+    exit 1
+fi
+
+print_success "Docker e Docker Compose disponíveis"
+echo ""
+
 # Variáveis de configuração
 ENVIRONMENT=""
 INSTALL_GRAFANA="y"
@@ -255,22 +275,45 @@ print_header "Executando Configuração"
 # 1. Gerar arquivo .env se não existir
 echo -n "Gerando credenciais... "
 if [ ! -f .env ]; then
-    if [ -f scripts/generate_credentials.sh ]; then
-        bash scripts/generate_credentials.sh > .env
-        
-        # Adicionar configurações do Analytics se instalado
-        if [[ "$INSTALL_ANALYTICS" =~ ^[Yy]$ ]]; then
-            echo "" >> .env
-            echo "# Analytics Configuration" >> .env
-            echo "ANALYTICS_TEMP_THRESHOLD=${TEMP_THRESHOLD}" >> .env
-            echo "ANALYTICS_INTERVAL=${ANALYTICS_INTERVAL}" >> .env
-        fi
-        
-        print_success "Credenciais geradas"
-    else
-        print_error "Script generate_credentials.sh não encontrado"
-        exit 1
+    # Gerar credenciais inline (sem depender de script externo)
+    cat > .env <<ENVFILE
+# ==========================================
+# MOV Platform - Credenciais de Produção
+# Gerado em: $(date)
+# MANTENHA ESTE ARQUIVO SEGURO!
+# ==========================================
+
+# MQTT Credentials
+MQTT_USER=admin_$(openssl rand -hex 4)
+MQTT_PASSWORD=$(openssl rand -base64 32 | tr -d '\n')
+
+# InfluxDB Configuration
+INFLUX_USER=admin_influx
+INFLUX_PASSWORD=$(openssl rand -base64 32 | tr -d '\n')
+INFLUX_ORG=mov_industria
+INFLUX_BUCKET=mov_dados
+INFLUX_TOKEN=$(openssl rand -base64 64 | tr -d '\n')
+
+# Grafana
+GRAFANA_PASSWORD=$(openssl rand -base64 32 | tr -d '\n')
+
+# Backup Remoto - Criptografia
+BACKUP_CRYPT_PASSWORD=$(openssl rand -base64 32 | tr -d '\n')
+BACKUP_CRYPT_SALT=$(openssl rand -base64 32 | tr -d '\n')
+ENVFILE
+    
+    # Adicionar configurações do Analytics se instalado
+    if [[ "$INSTALL_ANALYTICS" =~ ^[Yy]$ ]]; then
+        cat >> .env <<ENVFILE
+
+# Analytics Configuration
+ANALYTICS_TEMP_THRESHOLD=${TEMP_THRESHOLD}
+ANALYTICS_INTERVAL=${ANALYTICS_INTERVAL}
+ENVFILE
     fi
+    
+    chmod 600 .env
+    print_success "Credenciais geradas e protegidas"
 else
     print_info "Arquivo .env já existe (mantido)"
 fi
@@ -283,13 +326,45 @@ echo -n "Criando estrutura de diretórios... "
 [[ "$INSTALL_BACKUP" =~ ^[Yy]$ ]] && mkdir -p backups
 print_success "Diretórios criados"
 
-# 3. Configurar permissões
+# 3. Configurar permissões (inline - não depende de script externo)
 echo -n "Configurando permissões... "
-if [ -f scripts/fix_permissions.sh ]; then
-    bash scripts/fix_permissions.sh "$PROJECT_DIR" > /dev/null 2>&1 || true
+
+# Função inline para configurar permissões
+configure_permissions() {
+    local path="$1"
+    local uid="$2"
+    local gid="$3"
+    
+    if [ -d "$path" ]; then
+        if command -v sudo &> /dev/null; then
+            sudo chown -R "$uid:$gid" "$path" 2>/dev/null || true
+            sudo chmod -R 755 "$path" 2>/dev/null || true
+        else
+            chown -R "$uid:$gid" "$path" 2>/dev/null || true
+            chmod -R 755 "$path" 2>/dev/null || true
+        fi
+    fi
+}
+
+# Mosquitto (UID:GID 1883:1883)
+[[ "$INSTALL_MOSQUITTO" =~ ^[Yy]$ ]] && configure_permissions "$PROJECT_DIR/mosquitto/config" "1883" "1883"
+[[ "$INSTALL_MOSQUITTO" =~ ^[Yy]$ ]] && configure_permissions "$PROJECT_DIR/mosquitto/data" "1883" "1883"
+[[ "$INSTALL_MOSQUITTO" =~ ^[Yy]$ ]] && configure_permissions "$PROJECT_DIR/mosquitto/log" "1883" "1883"
+
+# Certificados Mosquitto
+if [[ "$INSTALL_MOSQUITTO" =~ ^[Yy]$ ]] && [ -d "$PROJECT_DIR/mosquitto/certs" ]; then
+    configure_permissions "$PROJECT_DIR/mosquitto/certs" "1883" "1883"
+    chmod 600 "$PROJECT_DIR/mosquitto/certs"/*.key 2>/dev/null || true
+    chmod 644 "$PROJECT_DIR/mosquitto/certs"/*.crt 2>/dev/null || true
 fi
+
+# InfluxDB (UID:GID 1000:1000)
+[[ "$INSTALL_INFLUXDB" =~ ^[Yy]$ ]] && configure_permissions "$PROJECT_DIR/influxdb/config" "1000" "1000"
+
+# Scripts executáveis
 chmod +x scripts/*.sh 2>/dev/null || true
 chmod +x mosquitto/docker-entrypoint.sh 2>/dev/null || true
+
 print_success "Permissões configuradas"
 
 # 4. Gerar docker-compose customizado

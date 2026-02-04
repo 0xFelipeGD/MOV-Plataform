@@ -1,1145 +1,746 @@
-# 🚀 MOV Platform - Guia Completo de Deploy em Produção
+# 🚀 Deploy MOV Platform - VPS Ubuntu
 
-**Primeira vez fazendo deploy?** Este guia explica tudo passo a passo, sem pular nada.
-
----
-
-## 📋 Visão Geral
-
-### O Que Este Guia Cobre
-
-✅ Deploy completo em servidor VPS (Ubuntu/Debian)  
-✅ Configuração de segurança (firewall, SSL/TLS)  
-✅ Backup automatizado local e remoto  
-✅ Separação desenvolvimento vs produção  
-✅ Troubleshooting e validação
-
-### Tempo Estimado
-
-- **Setup inicial:** 20-30 minutos
-- **Com SSL e backup:** 40-60 minutos
-
-### Pré-requisitos
-
-- VPS com Ubuntu 20.04+ ou Debian (mínimo 2GB RAM)
-- Domínio apontando para VPS (opcional, para SSL)
-- Docker instalado na VPS (ver Apêndice A)
-- Conhecimento básico de SSH
+**Guia único e definitivo para deploy em produção (VPS Hostinger/Ubuntu)**
 
 ---
 
-## 📍 FASE 1: Teste Local (Desenvolvimento)
+## 📋 Checklist Pré-Deploy
 
-**Antes de fazer deploy em produção, teste localmente no seu PC:**
+Antes de começar, certifique-se de ter:
 
-### Desenvolvimento Local
+- [ ] VPS Hostinger ativa (Ubuntu 20.04/22.04/24.04)
+- [ ] Acesso root via SSH
+- [ ] IP público da VPS (ex: 203.45.67.89)
+- [ ] Domínio (opcional, mas recomendado para SSL)
+- [ ] Código do projeto em repositório Git
+
+**Tempo estimado:** 30-45 minutos
+
+---
+
+## 🎯 FASE 1: Acesso Inicial à VPS Hostinger
+
+### 1.1. Obter Credenciais SSH
+
+No painel da Hostinger:
+
+1. Vá em **VPS** → Sua VPS
+2. Clique em **Informações SSH**
+3. Anote:
+   - **IP**: `203.45.67.89` (exemplo)
+   - **Usuário**: `root`
+   - **Senha**: (fornecida pela Hostinger)
+   - **Porta SSH**: `22` (padrão)
+
+### 1.2. Conectar via SSH
+
+No seu computador (Linux/Mac/Windows com Git Bash):
 
 ```bash
-# 1. Clonar projeto
-git clone <seu-repositorio>
-cd MOV-Plataform
+# Conectar como root
+ssh root@203.45.67.89
 
-# 2. Gerar credenciais
-bash scripts/setup.sh
-
-# 3. Iniciar serviços
-docker compose up -d
-
-# 4. Verificar status
-docker compose ps
+# Digite a senha quando solicitado
+# Primeira vez: digite "yes" para aceitar fingerprint
 ```
 
-### Acessos Locais
+✅ **Conectado!** Você verá algo como: `root@vps-123456:~#`
 
-| Serviço      | URL                   | Credenciais |
-| ------------ | --------------------- | ----------- |
-| **Grafana**  | http://localhost:3000 | Ver `.env`  |
-| **InfluxDB** | http://localhost:8086 | Ver `.env`  |
-| **MQTT**     | localhost:1883        | Ver `.env`  |
-
-💡 **Dica:** No desenvolvimento, todas as portas ficam abertas para facilitar testes.
-
----
-
-## 📍 FASE 2: Preparar Ambiente de Produção
-
-### O que você precisa TER antes:
-
-#### ✅ 1. Uma VPS (servidor na nuvem)
-
-Exemplos: DigitalOcean, AWS, Azure, Contabo, etc.
-
-- Sistema: Ubuntu 20.04+ ou Debian
-- RAM: Mínimo 2GB
-- Acesso SSH (usuário e senha ou chave SSH)
-
-#### ✅ 2. Um domínio (opcional mas recomendado)
-
-Exemplo: `seusite.com.br`
-
-- Compre em: Registro.br, GoDaddy, Namecheap, etc.
-- Configure DNS apontando para o IP da VPS:
-  ```
-  Tipo A: grafana.seusite.com.br → 203.45.67.89 (IP da sua VPS)
-  ```
-
-#### ✅ 3. Docker instalado na VPS
-
-Veja "Apêndice A" no final deste arquivo.
-
----
-
-## 📍 FASE 3: Deploy PASSO A PASSO
-
-### **PASSO 1: Conectar na VPS**
-
-No seu computador:
+### 1.3. Atualizar Sistema
 
 ```bash
-ssh usuario@203.45.67.89
-# Troque pelo seu usuário e IP da VPS
-```
+# Atualizar lista de pacotes
+apt update
 
-Agora você está DENTRO da VPS! 🖥️
+# Atualizar pacotes instalados
+apt upgrade -y
 
----
-
-### **PASSO 2: Clonar o repositório**
-
-Na VPS, rode:
-
-```bash
-# Clone seu projeto
-git clone https://github.com/0xFelipeGD/MOV-Plataform.git
-
-# Entre na pasta
-cd MOV-Plataform
-
-# Verifique se os arquivos estão lá
-ls -la
-```
-
-Você deve ver: `docker-compose.yml`, `scripts/`, `nginx/`, etc.
-
-**Importante:** Verifique se todos os scripts têm permissão de execução:
-
-```bash
-chmod +x scripts/*.sh
-chmod +x mosquitto/docker-entrypoint.sh
+# Instalar utilitários básicos
+apt install -y curl git ufw htop nano
 ```
 
 ---
 
-### **PASSO 3: Executar setup automático**
+## 🐳 FASE 2: Instalar Docker e Docker Compose
 
-Na VPS:
-
-```bash
-chmod +x scripts/setup.sh
-./scripts/setup.sh
-```
-
-**O que isso faz:**
-
-- Cria estrutura de diretórios necessária
-- Gera senhas aleatórias e fortes automaticamente
-- **Gera senhas de criptografia para backups** (automático)
-- Salva tudo no arquivo `.env`
-- Configura permissões corretas
-- Você NÃO precisa criar senhas manualmente
-
-**O arquivo .env contém:**
-
-- Senhas MQTT, InfluxDB, Grafana
-- Tokens de autenticação
-- **Senhas de criptografia de backup** (geradas automaticamente)
-
-**Alternativa (manual):**
+### 2.1. Instalar Docker
 
 ```bash
-# Se preferir gerar apenas as credenciais
-bash scripts/generate_credentials.sh > .env
+# Script oficial Docker
+curl -fsSL https://get.docker.com | sh
 
-# E criar diretórios manualmente
-mkdir -p mosquitto/{config,data,log} influxdb/config backups
+# Verificar instalação
+docker --version
+# Deve mostrar: Docker version 24.x.x ou superior
 ```
 
-**Veja as senhas geradas:**
+### 2.2. Instalar Docker Compose
 
 ```bash
-cat .env
+# Já vem incluído no Docker moderno, verificar:
+docker compose version
+
+# Se não existir, instalar manualmente:
+apt install -y docker-compose-plugin
 ```
 
-Vai aparecer algo assim:
-
-```
-MQTT_USER=admin_a1b2c3
-MQTT_PASSWORD=xYz123AbC456...
-INFLUX_USER=admin_influx
-INFLUX_PASSWORD=aBc789XyZ...
-```
-
-**💡 IMPORTANTE:** Guarde essas senhas! Você vai precisar delas depois.
-
----
-
-### **PASSO 4: Rodar o deploy**
-
-Na VPS:
+### 2.3. Iniciar Docker
 
 ```bash
-bash scripts/deploy.sh
-```
-
-**O que esse script FAZ automaticamente:**
-
-1. ✅ Verifica se Docker está instalado
-2. ✅ Para containers antigos (se existirem)
-3. ✅ Gera certificados SSL para MQTT
-4. ✅ Configura Mosquitto para usar SSL
-5. ✅ Inicia TODOS os containers (InfluxDB, Grafana, MQTT, Telegraf, etc)
-6. ✅ Usa configuração SEGURA (portas fechadas)
-
-**Aguarde uns 30 segundos.** Você verá mensagens verdes ✅ de sucesso.
-
----
-
-### **PASSO 5: Configurar Firewall**
-
-Na VPS:
-
-```bash
-sudo bash scripts/setup_firewall.sh
-```
-
-**O que isso faz:**
-
-- Bloqueia TODAS as portas (segurança máxima)
-- Abre APENAS:
-  - Porta 22 (SSH - para você acessar)
-  - Porta 80 (HTTP)
-  - Porta 443 (HTTPS)
-  - Porta 8883 (MQTT SSL - para dispositivos IoT)
-
-**Pronto!** Seu servidor está protegido 🔒
-
----
-
-### **PASSO 6: Testar acesso (SEM SSL ainda)**
-
-No navegador do seu PC, acesse:
-
-```
-http://203.45.67.89
-# Troque pelo IP da sua VPS
-```
-
-Você deve ver o **Grafana** aparecer! 🎉
-
-**Login padrão:**
-
-- Usuário: `admin`
-- Senha: (veja no arquivo `.env` na VPS o valor de `GRAFANA_PASSWORD`)
-
-**⚠️ ATENÇÃO:** Ainda está em HTTP (sem cadeado). Vamos adicionar HTTPS agora!
-
----
-
-### **PASSO 7: Configurar HTTPS (SSL) - OPCIONAL mas RECOMENDADO**
-
-**Pré-requisito:** Ter um domínio configurado (ex: `grafana.seusite.com.br`)
-
-Na VPS:
-
-```bash
-sudo bash scripts/setup_ssl.sh grafana.seusite.com.br
-# Troque pelo seu domínio real
-```
-
-**O que isso faz AUTOMATICAMENTE:**
-
-1. ✅ Instala o Certbot (ferramenta de certificados)
-2. ✅ Gera certificado SSL/TLS **GRÁTIS** do Let's Encrypt
-3. ✅ Atualiza configuração do Nginx para usar HTTPS
-4. ✅ Configura renovação automática (certificados expiram a cada 90 dias)
-5. ✅ Configura renovação automática de certificados MQTT
-
-**Você NÃO precisa descomentar nada manualmente!** O script faz isso.
-
-Agora acesse:
-
-```
-https://grafana.seusite.com.br
-```
-
-Deve aparecer o **cadeado verde 🔒** no navegador!
-
----
-
-### **PASSO 8: Configurar Backup Remoto (Google Drive/OneDrive) - RECOMENDADO**
-
-**Por que fazer isso?** Se o servidor pegar fogo ou for hackeado, seus backups estarão seguros na nuvem! 🌐
-
-Na VPS:
-
-```bash
-bash scripts/setup_remote_backup.sh
-```
-
-**O que isso faz:**
-
-1. ✅ Instala Rclone (ferramenta de sincronização)
-2. ✅ Você escolhe: Google Drive (15 GB grátis), MEGA (20 GB), OneDrive ou Dropbox
-3. ✅ Faz login na sua conta (abre o navegador automaticamente)
-4. ✅ Pergunta se quer criptografar (RECOMENDADO para dados sensíveis)
-5. ✅ **Usa senhas do .env automaticamente** (geradas no PASSO 3)
-6. ✅ Configura envio automático TODO DIA às 2h da manhã
-7. ✅ Mantém 30 dias de backups na nuvem
-
-**Você faz UMA VEZ e depois esquece!** Funciona sozinho para sempre.
-
-**Exemplo de escolha:**
-
-- Opção 1 (Google Drive) ⭐ RECOMENDADO
-- Criptografar? **S** (usa senhas do .env automaticamente)
-- Login no Google (abre navegador)
-- Pronto! Backups diários automáticos
-
-**🔐 Segurança:**
-
-- Senhas de criptografia geradas automaticamente (256 bits)
-- Armazenadas no .env (seguro, não vai para GitHub)
-- Google Drive **não consegue** ler seus backups criptografados
-- Em caso de perda: restaure o .env junto com os backups
-
-**Ver seus backups:**
-
-- Acesse https://drive.google.com
-- Pasta: "MOV-Platform-Backups"
-- Arquivos: grafana_20260203.tar.gz, influxdb_20260203.tar.gz
-
----
-
-## ✅ PRONTO! Deploy Completo!
-
-### ⏰ Automação Configurada (funciona sozinho):
-
-**Você configurou uma vez, agora tudo roda automaticamente:**
-
-- 🔄 **1h da manhã:** Backup local (Grafana + InfluxDB) → pasta `./backups`
-- 🌐 **2h da manhã:** Backup enviado para Google Drive/MEGA (se configurou)
-- 🔐 **3h da manhã:** Renovação de certificados HTTPS (Let's Encrypt)
-- 🔒 **4h da manhã:** Renovação de certificados MQTT (autoassinados)
-
-**Você não precisa fazer NADA! Sistema se mantém sozinho.** 🎉
-
-### Seus acessos em PRODUÇÃO:
-
-#### 📊 **Grafana (Cliente/Você/Dashboards)**
-
-```
-https://grafana.seudominio.com  (se configurou SSL)
-ou
-http://ip-da-vps  (sem SSL)
-```
-
-#### 🔌 **MQTT (Dispositivos IoT e Node-RED)**
-
-**No Node-RED, configure o bloco MQTT:**
-
-```
-Server: ip-da-vps (ou dominio)
-Port: 8883
-Protocol: MQTTS (SSL/TLS)
-Username: (veja MQTT_USER no .env)
-Password: (veja MQTT_PASSWORD no .env)
-```
-
-**⚠️ IMPORTANTE:** Porta 1883 (sem SSL) está FECHADA por segurança!
-
-#### 📈 **InfluxDB (Administração - quando você precisar)**
-
-InfluxDB está FECHADO (seguro). Para acessar:
-
-No **seu computador local**, rode:
-
-```bash
-ssh -L 8086:localhost:8086 usuario@ip-da-vps
-```
-
-Deixe esse terminal aberto e acesse no navegador:
-
-```
-http://localhost:8086
-```
-
-Você está acessando o InfluxDB da VPS de forma SEGURA via túnel SSH! 🔐
-
----
-
-## 🔄 Atualizar Deploy (depois de mudanças no código)
-
-Na VPS:
-
-```bash
-# Puxar atualizações do Git
-git pull
-
-# Reiniciar containers
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Iniciar serviço
+systemctl start docker
+
+# Habilitar inicialização automática
+systemctl enable docker
+
+# Verificar status
+systemctl status docker
+# Deve estar "active (running)"
 ```
 
 ---
 
-## 🆘 Problemas Comuns
+## 🔐 FASE 3: Configurar Firewall (UFW)
 
-### "Address already in use" - Erro de porta ocupada (InfluxDB 8086 / Grafana 3000)
+**ATENÇÃO:** Faça na ordem correta para não perder acesso SSH!
 
-**Erro típico:**
-
-```
-failed to bind host port 127.0.0.1:8086/tcp: address already in use
-failed to bind host port 127.0.0.1:3000/tcp: address already in use
-```
-
-**Causa:** Algum processo já está usando essas portas na VPS. Pode ser:
-
-- Containers antigos que não foram parados
-- Serviços pré-instalados da Hostinger/provedor
-- Outra instância do projeto rodando
-
-**Diagnóstico - Descobrir o que está usando a porta:**
+### 3.1. Configurar UFW
 
 ```bash
-# Ver processos nas portas problemáticas
-sudo ss -tulpn | grep ':8086\|:3000'
+# Permitir SSH ANTES de ativar firewall (CRÍTICO!)
+ufw allow 22/tcp comment 'SSH'
 
-# Ou com lsof (se disponível)
-sudo lsof -i :8086
-sudo lsof -i :3000
+# Permitir portas da aplicação
+ufw allow 80/tcp comment 'HTTP - Nginx'
+ufw allow 443/tcp comment 'HTTPS - Nginx'
+ufw allow 8883/tcp comment 'MQTT SSL - IoT Devices'
 
-# Ver todos os containers Docker rodando
-docker ps -a
+# Definir padrões
+ufw default deny incoming
+ufw default allow outgoing
 
-# Ver serviços do sistema
-sudo systemctl list-units --type=service --state=running | grep -E 'influx|grafana|node'
+# Ativar firewall
+ufw --force enable
+
+# Verificar regras
+ufw status verbose
 ```
 
-**Solução 1 - Parar containers antigos:**
+✅ **Saída esperada:**
 
-```bash
-# Parar TODOS os containers do projeto
-docker compose down
+```
+Status: active
 
-# Se ainda houver containers órfãos
-docker stop $(docker ps -aq)
-docker rm $(docker ps -aq)
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW       Anywhere
+80/tcp                     ALLOW       Anywhere
+443/tcp                    ALLOW       Anywhere
+8883/tcp                   ALLOW       Anywhere
 ```
 
-**Solução 2 - Matar processos nas portas:**
+### 3.2. Portas Utilizadas
 
-```bash
-# Forçar liberação das portas
-sudo fuser -k 8086/tcp
-sudo fuser -k 3000/tcp
-```
-
-**Solução 3 - Desabilitar serviços pré-instalados:**
-
-```bash
-# Se a VPS veio com InfluxDB ou Grafana instalados
-sudo systemctl stop influxdb grafana-server 2>/dev/null
-sudo systemctl disable influxdb grafana-server 2>/dev/null
-```
-
-**Após liberar as portas, rode o deploy novamente:**
-
-```bash
-bash scripts/deploy.sh
-```
+| Porta | Protocolo | Serviço        | Exposição                        |
+| ----- | --------- | -------------- | -------------------------------- |
+| 22    | TCP       | SSH            | Externa                          |
+| 80    | TCP       | HTTP (Nginx)   | Externa                          |
+| 443   | TCP       | HTTPS (Nginx)  | Externa                          |
+| 8883  | TCP       | MQTT SSL       | Externa                          |
+| 1883  | TCP       | MQTT (sem SSL) | **BLOQUEADA** (apenas localhost) |
+| 3000  | TCP       | Grafana        | **BLOQUEADA** (via Nginx)        |
+| 8086  | TCP       | InfluxDB       | **BLOQUEADA** (acesso interno)   |
 
 ---
 
-### "Não consigo acessar o Grafana"
+## 📦 FASE 4: Clonar e Configurar Projeto
 
-**Verificar se está rodando:**
-
-```bash
-docker compose ps
-```
-
-Todos devem estar "Up". Se algum estiver "Exit", veja os logs:
+### 4.1. Criar Estrutura de Diretórios
 
 ```bash
-docker compose logs grafana
-docker compose logs nginx
-```
-
-**Verificar firewall:**
-
-```bash
-sudo ufw status
-```
-
-Porta 80 e 443 devem estar "ALLOW".
-
----
-
-### "Node-RED não conecta no MQTT"
-
-**Certifique-se:**
-
-1. Porta: `8883` (não 1883)
-2. Protocolo: `MQTTS` ou `SSL/TLS`
-3. Usuário e senha: veja no `.env` da VPS
-
-**Ver logs do Mosquitto:**
-
-```bash
-docker compose logs mosquitto
-```
-
----
-
-### "Esqueci as senhas!"
-
-Na VPS:
-
-```bash
-cat .env
-```
-
-Todas as senhas estão lá!
-
----
-
-### "Mosquitto não encontra credenciais" ou "MQTT authentication failed"
-
-**Erro típico nos logs:**
-
-```
-ERRO: Variaveis MQTT_USER ou MQTT_PASSWORD nao definidas!
-```
-
-**Causa:** O arquivo `.env` não existe ou está incompleto.
-
-**Diagnóstico:**
-
-```bash
-# Verificar se .env existe e tem as variáveis MQTT
-cat .env | grep MQTT
-
-# Verificar se as variáveis chegam no container
-docker exec mov_broker env | grep MQTT
-
-# Ver logs do Mosquitto
-docker compose logs mosquitto
-```
-
-**Solução - Recriar credenciais:**
-
-```bash
-# Parar containers
-docker compose down
-
-# Gerar novo .env com todas as credenciais
-bash scripts/setup.sh
-
-# Verificar se foi criado
-cat .env | grep MQTT
-
-# Rodar deploy novamente
-bash scripts/deploy.sh
-```
-
-**⚠️ IMPORTANTE:** Sempre rode `bash scripts/setup.sh` ANTES do `deploy.sh`!
-
----
-
----
-
-## 📋 Resumo Executivo
-
-### Deploy Completo em 6 Comandos
-
-```bash
-# 1. Clonar projeto na VPS
-git clone https://github.com/usuario/MOV-Plataform.git
-cd MOV-Plataform
-
-# 2. Dar permissão de execução aos scripts
-chmod +x scripts/*.sh mosquitto/docker-entrypoint.sh
-
-# 3. Setup inicial (cria .env, diretórios e permissões)
-bash scripts/setup.sh
-
-# 4. Deploy com SSL/TLS automático
-bash scripts/deploy.sh
-
-# 5. Configurar firewall (UFW)
-sudo bash scripts/setup_firewall.sh
-
-# 6. SSL Let's Encrypt (se tiver domínio)
-sudo bash scripts/setup_ssl.sh seu-dominio.com
-```
-
-### ✅ O Que os Scripts Fazem Automaticamente
-
-| Script                    | Ação                                                          |
-| ------------------------- | ------------------------------------------------------------- |
-| `setup.sh`                | **PRIMEIRO!** Cria `.env`, diretórios e ajusta permissões     |
-| `deploy.sh`               | Inicia containers em modo produção com SSL/TLS MQTT           |
-| `setup_firewall.sh`       | Configura UFW (permite apenas 22, 80, 443, 8883)              |
-| `setup_ssl.sh`            | Let's Encrypt HTTPS + renovação automática                    |
-| `generate_credentials.sh` | (Usado internamente pelo setup.sh) Gera senhas criptográficas |
-
-### ✅ Credenciais do .env Aplicadas Automaticamente Em
-
-- ✅ Mosquitto (broker MQTT)
-- ✅ InfluxDB (banco de dados)
-- ✅ Grafana (dashboards)
-- ✅ Telegraf (coletor)
-- ✅ Analytics (processamento Python)
-
-### ❌ Você NÃO Precisa
-
-- ❌ Editar arquivos `.conf` manualmente
-- ❌ Criar senhas fracas você mesmo
-- ❌ Configurar serviços um por um
-- ❌ Abrir/fechar portas manualmente
-- ❌ Lembrar de renovar certificados
-
-**🎯 Resultado:** Plataforma segura rodando em produção com backup automático e renovação de certificados.
-
----
-
-## 🎯 Checklist de Validação Pós-Deploy
-
-### 1. Verificar Status dos Containers
-
-```bash
-# Ver status de todos os serviços
-docker compose ps
-
-# Resultado esperado: todos "Up" ou "Up (healthy)"
-```
-
-### 2. Verificar Logs
-
-```bash
-# Ver últimas 50 linhas de todos os serviços
-docker compose logs --tail=50
-
-# Ver logs em tempo real de um serviço
-docker compose logs -f grafana
-docker compose logs -f mosquitto
-docker compose logs -f influxdb
-```
-
-### 3. Testar Acessos
-
-#### Com Domínio Configurado
-
-- **Grafana:** https://seu-dominio.com
-  - Deve redirecionar HTTP → HTTPS automaticamente
-  - Certificado SSL válido (Let's Encrypt)
-  - Login com credenciais do `.env`
-
-- **MQTT:** `seu-dominio.com:8883`
-  - Conexão SSL/TLS obrigatória
-  - Autenticação com credenciais do `.env`
-
-#### Sem Domínio (Apenas IP)
-
-```bash
-# SSH tunnel para Grafana
-ssh -L 3000:localhost:3000 usuario@ip-vps
-# Acesse: http://localhost:3000
-
-# SSH tunnel para InfluxDB
-ssh -L 8086:localhost:8086 usuario@ip-vps
-# Acesse: http://localhost:8086
-```
-
-### 4. Testar Publicação MQTT
-
-```bash
-# Publicar mensagem de teste (sem SSL - apenas desenvolvimento)
-mosquitto_pub -h seu-dominio.com -p 1883 \
-  -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
-  -t "mov/dados/teste" \
-  -m '{"timestamp":"2026-02-03T10:00:00Z","tags":{"dispositivo":"teste","tipo":"temperatura"},"fields":{"temperatura_c":25.5}}'
-
-# Publicar com SSL/TLS (produção)
-mosquitto_pub -h seu-dominio.com -p 8883 \
-  --cafile /etc/ssl/certs/ca-certificates.crt \
-  -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
-  -t "mov/dados/teste" \
-  -m '{"temperatura_c":25.5}'
-```
-
-### 5. Verificar Firewall
-
-```bash
-# Ver status do UFW
-sudo ufw status verbose
-
-# Resultado esperado:
-# Status: active
-# 22/tcp     ALLOW IN    SSH
-# 80/tcp     ALLOW IN    HTTP
-# 443/tcp    ALLOW IN    HTTPS
-# 8883/tcp   ALLOW IN    MQTT SSL
-```
-
-### 6. Verificar Certificados SSL
-
-```bash
-# Verificar certificado HTTPS (Let's Encrypt)
-sudo certbot certificates
-
-# Verificar certificado MQTT
-openssl x509 -in mosquitto/certs/server.crt -noout -dates
-
-# Ver dias restantes
-openssl x509 -in mosquitto/certs/server.crt -noout -enddate
-```
-
-### 7. Testar Backup Automático
-
-```bash
-# Ver logs do container de backup
-docker compose logs backup_job
-
-# Verificar se backups estão sendo criados
-ls -lh backups/
-
-# Executar backup remoto manualmente (se configurado)
-sudo /usr/local/bin/mov_remote_backup.sh
-
-# Ver logs do backup remoto
-tail -50 /var/log/mov_remote_backup.log
-```
-
-### 8. Verificar Cron Jobs
-
-```bash
-# Listar cron jobs do root
-sudo crontab -l
-
-# Resultado esperado:
-# 0 3 * * * certbot renew --quiet --deploy-hook 'docker compose restart nginx'
-# 0 4 * * * /usr/local/bin/renew_mqtt_certs.sh
-# 0 2 * * * /usr/local/bin/mov_remote_backup.sh >> /var/log/mov_remote_backup.log 2>&1
-```
-
-### ✅ Checklist Final
-
-| Item                 | Comando de Verificação      | Status Esperado             |
-| -------------------- | --------------------------- | --------------------------- |
-| Containers rodando   | `docker compose ps`         | Todos "Up"                  |
-| Grafana acessível    | Abrir https://dominio       | Login aparece               |
-| MQTT conecta         | `mosquitto_pub` com SSL     | Sem erros                   |
-| Firewall ativo       | `sudo ufw status`           | Active                      |
-| Certificados válidos | `sudo certbot certificates` | Valid, >30 dias             |
-| Backup funciona      | `ls backups/`               | Arquivos `.tar.gz` recentes |
-| Cron configurado     | `sudo crontab -l`           | 3 jobs listados             |
-
----
-
-## � Backup e Recuperação
-
-### Backup Local (automático)
-
-**Container `backup_job` roda TODO DIA às 1h da manhã:**
-
-```bash
-# Ver backups locais
-ls -lh backups/
-
-# Saída:
-# grafana_20260203_010000.tar.gz  (dashboards, configurações)
-# influxdb_20260203_010000.tar.gz (todos os dados de sensores)
-```
-
-**Retenção:** 7 dias locais (limpa automaticamente)
-
----
-
-### Backup Remoto (Google Drive/MEGA)
-
-**Se você configurou o `setup_remote_backup.sh`, TODO DIA às 2h da manhã os backups vão para a nuvem.**
-
-**Comandos úteis:**
-
-```bash
-# Ver backups na nuvem
-rclone ls mov-backup:
-
-# Executar backup manual agora
-sudo /usr/local/bin/mov_remote_backup.sh
-
-# Ver logs do último backup
-tail -50 /var/log/mov_remote_backup.log
-
-# Ver espaço usado no Google Drive
-rclone about mov-drive:
-```
-
-**Acesso via navegador:**
-
-- Google Drive: https://drive.google.com
-- Pasta: "MOV-Platform-Backups"
-
----
-
-### Restaurar de um Backup
-
-**Cenário: Servidor pegou fogo 🔥 ou dados corrompidos**
-
-#### 1. Baixar backup da nuvem:
-
-```bash
-# Listar backups disponíveis
-rclone ls mov-backup:
-
-# Baixar o mais recente
-rclone copy mov-backup:grafana_20260203_010000.tar.gz ./
-rclone copy mov-backup:influxdb_20260203_010000.tar.gz ./
-```
-
-#### 2. Parar containers:
-
-```bash
-docker compose down
-```
-
-#### 3. Extrair backups:
-
-```bash
-# Restaurar Grafana
-tar -xzf grafana_20260203_010000.tar.gz -C /var/lib/docker/volumes/grafana_data/_data/
-
-# Restaurar InfluxDB
-tar -xzf influxdb_20260203_010000.tar.gz -C /var/lib/docker/volumes/influxdb_data/_data/
-```
-
-#### 4. Reiniciar:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-```
-
-**✅ Tudo restaurado!** Dashboards, dados, configurações voltam ao normal.
-
----
-
-## 🔧 Comandos de Manutenção
-
-### Ver status dos serviços:
-
-```bash
-docker compose ps
-docker compose logs -f        # Ver logs em tempo real
-docker compose logs grafana   # Logs de um serviço específico
-```
-
-### Ver agendamentos automáticos:
-
-```bash
-# Ver tarefas cron configuradas
-crontab -l
-
-# Saída esperada:
-# 0 3 * * * certbot renew --quiet --deploy-hook 'docker compose restart nginx'
-# 0 4 * * * /usr/local/bin/renew_mqtt_certs.sh
-# 0 2 * * * /usr/local/bin/mov_remote_backup.sh
-```
-
-### Espaço em disco:
-
-```bash
-# Ver espaço usado pelos containers
-docker system df
-
-# Limpar containers/imagens antigas
-docker system prune -a
-```
-
-### Certificados MQTT:
-
-```bash
-# Ver validade do certificado
-openssl x509 -enddate -noout -in mosquitto/certs/server.crt
-
-# Ver log de renovação
-sudo tail -f /var/log/mqtt_cert_renewal.log
-
-# Forçar renovação agora
-sudo /usr/local/bin/renew_mqtt_certs.sh
-```
-
----
-
-## 🔐 Segurança do Backup e Credenciais
-
-### Arquivo .env - O que tem dentro:
-
-```bash
-# Ver conteúdo (na VPS)
-cat .env
-
-# Exemplo:
-MQTT_PASSWORD=xYz123...
-GRAFANA_PASSWORD=aBc456...
-BACKUP_CRYPT_PASSWORD=pQr789...  ← Senha de criptografia dos backups
-BACKUP_CRYPT_SALT=lMn012...      ← Salt da criptografia
-```
-
-### Como funciona a segurança:
-
-```
-┌─────────────────────────────────────┐
-│  Arquivo .env (no servidor)         │
-│  ✅ NÃO vai para GitHub (.gitignore)│
-│  ✅ Senhas fortes (256 bits)        │
-│  ✅ Geradas automaticamente          │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────┐
-│  Backup Local (.tar.gz)             │
-│  ✅ Dados do Grafana + InfluxDB     │
-└──────────────┬──────────────────────┘
-               │
-               ▼ (se escolheu criptografar)
-┌─────────────────────────────────────┐
-│  Rclone Crypt (AES-256)             │
-│  ✅ Usa senhas do .env              │
-│  ✅ Criptografa antes de enviar     │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────┐
-│  Google Drive (nuvem)               │
-│  ✅ Arquivos criptografados         │
-│  ❌ Google NÃO consegue ler         │
-│  ❌ Hacker NÃO consegue descriptografar│
-└─────────────────────────────────────┘
-```
-
-### Se alguém invadir seu Google Drive:
-
-**SEM criptografia:**
-
-```
-❌ Pessoa baixa: grafana_20260203.tar.gz
-❌ Extrai e vê tudo: senhas, dados, tokens
-```
-
-**COM criptografia (usando .env):**
-
-```
-✅ Pessoa baixa: arquivo criptografado (lixo binário)
-❌ Tenta extrair: IMPOSSÍVEL sem a senha do .env
-✅ Seus dados estão seguros!
-```
-
-### Proteger o arquivo .env:
-
-```bash
-# Permissões corretas (apenas você lê)
-chmod 600 .env
-ls -la .env
-# Saída: -rw------- 1 usuario usuario .env
-
-# Fazer backup do .env (IMPORTANTE!)
-cp .env .env.backup
-scp .env seu-computador-local:~/backups/mov-platform-env-$(date +%Y%m%d)
-
-# Guardar em gerenciador de senhas
-# 1Password, Bitwarden, KeePass, etc.
-```
-
-### Clonar em outra máquina:
-
-```bash
-# Máquina nova (desenvolvimento, outra VPS, etc)
+# Criar pasta para projetos
+mkdir -p /opt/apps
+cd /opt/apps
+
+# Clonar repositório
 git clone https://github.com/seu-usuario/MOV-Plataform.git
 cd MOV-Plataform
 
-# Opção 1: Gerar novas credenciais (recomendado para dev)
-bash scripts/generate_credentials.sh > .env
+# Verificar estrutura
+ls -la
+```
 
-# Opção 2: Copiar .env da produção (para recuperação)
-scp vps-producao:~/MOV-Plataform/.env .
+### 4.2. Executar Setup Wizard
 
-# Configurar backup (usa senhas do .env automaticamente)
+```bash
+# Executar wizard interativo
+bash scripts/setup_wizard.sh
+```
+
+**Responda as perguntas do wizard:**
+
+```
+Etapa 1/3: Escolha o Ambiente
+  Selecione: 3 (Production - VPS com SSL, firewall, segurança máxima)
+
+Etapa 2/3: Componentes para Instalar
+  Grafana? [Y/n]: Y
+  InfluxDB? [Y/n]: Y
+  Mosquitto (MQTT)? [Y/n]: Y
+  Telegraf? [Y/n]: Y
+  Analytics (Python)? [Y/n]: Y
+  Nginx? [Y/n]: Y
+  Backup automático? [Y/n]: Y
+
+Etapa 3/3: Configurações Específicas
+  Domínio para Grafana: grafana.seudominio.com
+  Domínio para MQTT: mqtt.seudominio.com
+  (ou pressione Enter para pular e configurar depois)
+
+  Limite de temperatura (°C): 30.0
+  Intervalo de processamento (segundos): 10
+```
+
+✅ **O wizard criará:**
+
+- Arquivo `.env` com credenciais seguras
+- Estrutura de diretórios
+- Configuração de permissões
+- Arquivo de configuração `.setup_config`
+
+### 4.3. Verificar Arquivo .env
+
+```bash
+# Ver credenciais geradas
+cat .env
+
+# Exemplo de saída:
+# MQTT_USER=admin_a1b2c3d4
+# MQTT_PASSWORD=xQ9k7...
+# INFLUX_TOKEN=8s9k2...
+# GRAFANA_PASSWORD=pL3m4...
+```
+
+🔒 **IMPORTANTE:** Anote essas credenciais em local seguro!
+
+---
+
+## 🚀 FASE 5: Deploy da Aplicação
+
+### 5.1. Executar Deploy
+
+```bash
+# Executar script de deploy
+bash scripts/deploy.sh
+```
+
+**O que acontece:**
+
+1. ✅ Verifica Docker e Docker Compose
+2. ✅ Valida arquivo .env
+3. ✅ Para containers antigos (se existirem)
+4. ✅ Gera certificados SSL autoassinados (temporários)
+5. ✅ Configura Mosquitto para SSL
+6. ✅ Ajusta permissões dos diretórios
+7. ✅ Inicia containers em modo produção
+8. ✅ Aguarda serviços ficarem prontos
+
+### 5.2. Verificar Containers
+
+```bash
+# Ver status de todos os containers
+docker compose ps
+
+# Deve mostrar todos como "running" e "healthy"
+```
+
+✅ **Saída esperada:**
+
+```
+NAME              STATUS          PORTS
+mov_mosquitto     Up (healthy)    0.0.0.0:8883->8883/tcp
+mov_influxdb      Up (healthy)    -
+mov_grafana       Up (healthy)    -
+mov_telegraf      Up (healthy)    -
+mov_analytics     Up (healthy)    -
+mov_nginx         Up (healthy)    0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp
+```
+
+### 5.3. Verificar Logs (se necessário)
+
+```bash
+# Ver logs de todos os serviços
+docker compose logs -f
+
+# Ver log específico
+docker compose logs -f grafana
+docker compose logs -f mosquitto
+docker compose logs -f influxdb
+
+# Pressione CTRL+C para sair
+```
+
+---
+
+## 🌐 FASE 6: Configurar DNS (se tiver domínio)
+
+### 6.1. Configurar Registros DNS
+
+No seu provedor de domínio (Registro.br, GoDaddy, Hostinger DNS, etc.):
+
+**Tipo A - Apontar domínios para IP da VPS:**
+
+```
+Tipo: A
+Nome: grafana
+Valor: 203.45.67.89 (seu IP da VPS)
+TTL: 3600
+
+Tipo: A
+Nome: mqtt
+Valor: 203.45.67.89
+TTL: 3600
+```
+
+### 6.2. Verificar Propagação DNS
+
+```bash
+# No seu computador (não na VPS)
+nslookup grafana.seudominio.com
+
+# Deve retornar o IP da sua VPS
+```
+
+⏱️ **Propagação DNS:** Pode levar 5 minutos a 48 horas (geralmente 15-30 min)
+
+---
+
+## 🔒 FASE 7: Configurar SSL/TLS (Let's Encrypt)
+
+**Aguarde propagação DNS antes de continuar!**
+
+### 7.1. Instalar Certificados SSL
+
+```bash
+# Executar script de SSL
+bash scripts/setup_ssl.sh grafana.seudominio.com
+```
+
+**O que acontece:**
+
+1. Instala Certbot
+2. Valida DNS
+3. Para Nginx temporariamente
+4. Obtém certificado Let's Encrypt
+5. Configura renovação automática
+6. Gera certificados para Mosquitto
+7. Reinicia serviços
+
+### 7.2. Atualizar Configuração Nginx
+
+```bash
+# Editar arquivo de configuração
+nano nginx/conf.d/default.conf
+```
+
+**Modificar:**
+
+1. Descomentar bloco HTTPS (linhas 46-105)
+2. Trocar `grafana.seudominio.com` pelo seu domínio real
+3. Salvar: `CTRL+O`, Enter, `CTRL+X`
+
+**OU fazer via sed:**
+
+```bash
+# Substituir domínio automaticamente
+sed -i 's/grafana.seudominio.com/grafana.exemplo.com/g' nginx/conf.d/default.conf
+
+# Descomentar bloco HTTPS
+sed -i '/^# server {/,/^# }/s/^# //' nginx/conf.d/default.conf
+```
+
+### 7.3. Reiniciar Nginx
+
+```bash
+# Reiniciar apenas o Nginx
+docker compose restart nginx
+
+# Verificar se subiu corretamente
+docker compose logs nginx
+```
+
+### 7.4. Testar HTTPS
+
+```bash
+# Testar do servidor
+curl -I https://grafana.seudominio.com
+
+# Deve retornar: HTTP/2 200
+```
+
+🌐 **Acesse no navegador:** https://grafana.seudominio.com
+
+---
+
+## 📊 FASE 8: Configurar Grafana
+
+### 8.1. Primeiro Acesso
+
+1. Acesse: https://grafana.seudominio.com
+2. Login:
+   - **Usuário:** `admin`
+   - **Senha:** (do arquivo `.env`, variável `GRAFANA_PASSWORD`)
+
+3. Troque a senha (recomendado)
+
+### 8.2. Adicionar Data Source (InfluxDB)
+
+No Grafana:
+
+1. Menu ☰ → **Connections** → **Data sources**
+2. **Add data source** → **InfluxDB**
+3. Configurar:
+
+```
+Query Language: Flux
+URL: http://influxdb:8086
+Organization: mov_org
+Token: (copiar do .env, variável INFLUX_TOKEN)
+```
+
+4. **Save & Test** → Deve aparecer "Data source is working"
+
+### 8.3. Importar Dashboard (opcional)
+
+1. Menu ☰ → **Dashboards** → **Import**
+2. Upload `.json` ou usar ID do Grafana.com
+3. Exemplos úteis:
+   - **11074** - MQTT Topics
+   - **14251** - InfluxDB OSS Metrics
+   - **928** - Telegraf System Dashboard
+
+---
+
+## 📡 FASE 9: Testar Conexão MQTT
+
+### 9.1. Do Próprio Servidor (teste local)
+
+```bash
+# Instalar cliente MQTT
+apt install -y mosquitto-clients
+
+# Publicar mensagem de teste
+mosquitto_pub -h localhost -p 1883 \
+  -u "admin_xxxx" \
+  -P "senha_do_env" \
+  -t "test/topic" \
+  -m "Hello MOV Platform"
+
+# Assinar tópico em outro terminal
+mosquitto_sub -h localhost -p 1883 \
+  -u "admin_xxxx" \
+  -P "senha_do_env" \
+  -t "test/topic"
+```
+
+### 9.2. De Dispositivo Externo (IoT)
+
+**Configuração Node-RED / ESP32 / Raspberry:**
+
+```
+Broker: mqtt.seudominio.com (ou IP da VPS)
+Porta: 8883
+TLS: Habilitado
+Usuário: (do .env, MQTT_USER)
+Senha: (do .env, MQTT_PASSWORD)
+```
+
+**Exemplo Python:**
+
+```python
+import paho.mqtt.client as mqtt
+
+client = mqtt.Client()
+client.username_pw_set("admin_xxxx", "senha_do_env")
+client.tls_set()  # Habilita SSL
+client.connect("mqtt.seudominio.com", 8883, 60)
+client.publish("sensor/temperatura", "25.5")
+```
+
+---
+
+## 🔄 FASE 10: Configurar Backup Automático
+
+### 10.1. Backup Local (Diário)
+
+Já está configurado automaticamente! Verifica com:
+
+```bash
+# Ver configuração do cron
+crontab -l | grep backup
+
+# Testar backup manual
+bash scripts/backup.sh
+```
+
+**Localização dos backups:**
+
+- `/opt/apps/MOV-Plataform/backups/`
+- Rotação: 7 dias (backups mais antigos são deletados)
+
+### 10.2. Backup Remoto (Recomendado)
+
+```bash
+# Executar configuração de backup remoto
 bash scripts/setup_remote_backup.sh
 ```
 
-### Níveis de segurança:
+**Responda as perguntas:**
 
-| Componente                       | Proteção                 | Onde Está       |
-| -------------------------------- | ------------------------ | --------------- |
-| **Senhas MQTT/Grafana/InfluxDB** | 🔒 Arquivo .env (local)  | Servidor apenas |
-| **Token Google Drive**           | 🔒 /root/.config/rclone/ | Servidor apenas |
-| **Senhas de criptografia**       | 🔒 Arquivo .env (local)  | Servidor apenas |
-| **Backups locais**               | ⚠️ Não criptografados    | ./backups/      |
-| **Backups remotos**              | 🔐 AES-256 (se escolheu) | Google Drive    |
+```
+Servidor remoto: backup.exemplo.com
+Usuário SSH: backup_user
+Porta SSH: 22
+Diretório remoto: /backups/mov-platform
+```
 
-### ⚠️ NUNCA faça:
+**Testa conexão:**
 
 ```bash
-# ❌ ERRADO - Commitar .env no Git
-git add .env
-git commit -m "add env"  # ← Suas senhas vão para o GitHub!
-
-# ✅ CORRETO - .env já está no .gitignore
-git status
-# .env não aparece (está ignorado)
+# Executar backup teste
+/usr/local/bin/mov_remote_backup.sh
 ```
 
 ---
 
-## �📚 APÊNDICE A: Instalar Docker na VPS
+## ✅ FASE 11: Validação Final
 
-Se a VPS não tem Docker ainda:
+### 11.1. Checklist de Validação
+
+Execute cada comando e confirme funcionamento:
 
 ```bash
-# Atualizar sistema
-sudo apt update && sudo apt upgrade -y
+# 1. Todos os containers rodando
+docker compose ps
+# ✅ Todos devem estar "Up" e "healthy"
 
-# Instalar Docker
-curl -fsSL https://get.docker.com | sh
+# 2. Firewall ativo
+ufw status
+# ✅ Portas 22, 80, 443, 8883 abertas
 
-# Adicionar seu usuário ao grupo docker
-sudo usermod -aG docker $USER
+# 3. HTTPS funcionando
+curl -I https://grafana.seudominio.com
+# ✅ HTTP/2 200
 
-# IMPORTANTE: Sair e entrar novamente no SSH
-exit
-# Conecte novamente
-ssh usuario@ip-vps
+# 4. Grafana acessível
+# ✅ Abra no navegador e faça login
 
-# Testar
-docker --version
-docker compose version
+# 5. MQTT funcionando
+mosquitto_sub -h localhost -p 1883 -u admin_xxxx -P senha -t test
+# ✅ Conecta sem erros
+
+# 6. Backup configurado
+crontab -l
+# ✅ Deve ter entrada para backup diário
 ```
 
----
-
-## 📚 APÊNDICE B: Diferenças Desenvolvimento vs Produção
-
-### Tabela Comparativa
-
-| Aspecto                 | Desenvolvimento (PC)          | Produção (VPS)                                             |
-| ----------------------- | ----------------------------- | ---------------------------------------------------------- |
-| **Arquivo Compose**     | `docker-compose.yml`          | `docker-compose.yml` + `docker-compose.prod.yml` (overlay) |
-| **Comando Iniciar**     | `docker compose up -d`        | `bash scripts/deploy.sh`                                   |
-| **Grafana**             | `localhost:3000` direto       | `https://dominio` via Nginx com SSL                        |
-| **InfluxDB**            | `localhost:8086` exposto      | `127.0.0.1:8086` (SSH tunnel apenas)                       |
-| **MQTT**                | Porta `1883` sem criptografia | Porta `8883` com SSL/TLS                                   |
-| **Mosquitto WebSocket** | Porta `9001` exposta          | Removida (não exposta)                                     |
-| **Firewall**            | Desabilitado                  | UFW ativo (22, 80, 443, 8883)                              |
-| **SSL/TLS**             | Opcional                      | Obrigatório (Let's Encrypt)                                |
-| **Backup**              | Manual                        | Automático (1h AM local, 2h AM remoto)                     |
-| **Logs**                | `docker compose logs`         | Logs persistidos + `/var/log/`                             |
-| **Credenciais**         | `.env` local gerado           | `.env` gerado na VPS (único por servidor)                  |
-| **Health Checks**       | Ativos                        | Ativos                                                     |
-| **Restart Policy**      | `unless-stopped`              | `unless-stopped`                                           |
-
-### Porque Essa Separação?
-
-**Desenvolvimento (Local):**
-
-- 🎯 **Objetivo:** Facilitar testes e debug
-- ✅ Portas abertas para acesso direto
-- ✅ Sem criptografia (mais rápido)
-- ✅ Logs visíveis no terminal
-
-**Produção (VPS):**
-
-- 🎯 **Objetivo:** Segurança e confiabilidade
-- ✅ Apenas portas essenciais expostas
-- ✅ Criptografia obrigatória (TLS/SSL)
-- ✅ Firewall bloqueando tudo exceto necessário
-- ✅ Backup automático para recuperação
-
----
-
-## 📚 APÊNDICE C: Arquitetura de Segurança
-
-```
-                    INTERNET
-                       ↓
-        ┌──────────────────────────┐
-        │  Firewall UFW (VPS)      │
-        │  Permite: 22,80,443,8883 │
-        └──────────────────────────┘
-                       ↓
-        ┌──────────────────────────┐
-        │  Nginx (porta 80/443)    │
-        │  Proxy + SSL             │
-        └──────────────────────────┘
-                       ↓
-        ┌──────────────────────────────────┐
-        │  Rede Interna Docker             │
-        │                                  │
-        │  ┌─────────┐   ┌─────────┐     │
-        │  │Grafana  │←→ │InfluxDB │     │
-        │  │:3000    │   │:8086    │     │
-        │  └─────────┘   └─────────┘     │
-        │                                  │
-        │  ┌──────────┐  ┌──────────┐    │
-        │  │Mosquitto │←→│Telegraf  │    │
-        │  │:8883     │  │          │    │
-        │  └──────────┘  └──────────┘    │
-        └──────────────────────────────────┘
-```
-
-**Serviços VISÍVEIS na internet:**
-
-- ✅ Nginx (80/443) → Grafana
-- ✅ Mosquitto (8883) → IoT
-
-**Serviços INVISÍVEIS (rede interna):**
-
-- 🔒 Grafana porta 3000 (só via Nginx)
-- 🔒 InfluxDB porta 8086 (só via SSH ou rede Docker)
-- 🔒 Telegraf (sem porta externa)
-
----
-
-## 📚 APÊNDICE D: Como funciona o .env
-
-Quando você roda:
+### 11.2. Monitoramento
 
 ```bash
-bash scripts/generate_credentials.sh > .env
+# Ver uso de recursos
+htop
+
+# Ver logs em tempo real
+docker compose logs -f
+
+# Ver status do sistema
+systemctl status docker
 ```
-
-Um arquivo `.env` é criado com:
-
-```bash
-MQTT_USER=admin_abc123
-MQTT_PASSWORD=yzk98HFds...
-INFLUX_USER=admin_influx
-INFLUX_PASSWORD=AbX21mnQ...
-GRAFANA_PASSWORD=LoP45kJm...
-```
-
-No `docker-compose.yml`, cada serviço tem:
-
-```yaml
-environment:
-  - INFLUX_USER=${INFLUX_USER} # ← Docker SUBSTITUI pelo valor do .env
-  - INFLUX_PASSWORD=${INFLUX_PASSWORD}
-```
-
-**Docker lê o .env automaticamente!** Não precisa fazer nada.
 
 ---
 
-**🎉 Agora você está pronto para fazer deploy!**
+## 🎯 Resumo de Acessos
 
-**Dúvidas?** Cada script tem comentários explicando o que faz linha por linha.
+### URLs de Acesso
+
+| Serviço      | URL                                                        | Credenciais                       |
+| ------------ | ---------------------------------------------------------- | --------------------------------- |
+| **Grafana**  | https://grafana.seudominio.com                             | Usuário: `admin`<br>Senha: `.env` |
+| **MQTT SSL** | mqtt.seudominio.com:8883                                   | Usuário: `.env`<br>Senha: `.env`  |
+| **InfluxDB** | Via SSH tunnel<br>`ssh -L 8086:localhost:8086 root@VPS_IP` | Token: `.env`                     |
+
+### SSH Tunnel para InfluxDB (acesso externo)
+
+```bash
+# Do seu computador
+ssh -L 8086:localhost:8086 root@203.45.67.89
+
+# Acesse http://localhost:8086 no navegador
+```
+
+---
+
+## 🔧 Manutenção e Operação
+
+### Comandos Úteis
+
+```bash
+# Ver logs
+docker compose logs -f [serviço]
+
+# Reiniciar serviço específico
+docker compose restart [serviço]
+
+# Parar tudo
+docker compose down
+
+# Iniciar tudo
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# Atualizar código
+git pull origin main
+bash scripts/update.sh
+
+# Backup manual
+bash scripts/backup.sh
+
+# Ver uso de disco
+df -h
+
+# Limpar docker (cuidado!)
+docker system prune -a
+```
+
+### Atualização da Plataforma
+
+```bash
+# 1. Fazer backup
+bash scripts/backup.sh
+
+# 2. Parar serviços
+docker compose down
+
+# 3. Atualizar código
+git pull origin main
+
+# 4. Reconstruir e iniciar
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+# 5. Verificar
+docker compose ps
+```
+
+---
+
+## ⚠️ Troubleshooting
+
+### Container não inicia
+
+```bash
+# Ver logs detalhados
+docker compose logs [nome_container]
+
+# Verificar permissões
+ls -la mosquitto/ influxdb/ grafana/
+
+# Recriar container
+docker compose up -d --force-recreate [nome_container]
+```
+
+### Erro de permissão (Mosquitto/InfluxDB)
+
+```bash
+# Reajustar permissões
+sudo chown -R 1883:1883 mosquitto/
+sudo chown -R 1000:1000 influxdb/
+sudo chown -R 472:472 grafana/
+
+# Reiniciar
+docker compose restart
+```
+
+### SSL não funciona
+
+```bash
+# Verificar certificados
+ls -la /etc/letsencrypt/live/grafana.seudominio.com/
+
+# Renovar certificado manualmente
+certbot renew --force-renewal
+
+# Verificar configuração Nginx
+docker compose exec nginx nginx -t
+
+# Reiniciar Nginx
+docker compose restart nginx
+```
+
+### MQTT não conecta
+
+```bash
+# Verificar senha
+cat .env | grep MQTT
+
+# Testar localmente
+mosquitto_sub -h localhost -p 1883 -u admin_xxxx -P senha -t test
+
+# Ver logs Mosquitto
+docker compose logs -f mosquitto
+
+# Verificar certificados SSL
+ls -la mosquitto/certs/
+```
+
+### Sem espaço em disco
+
+```bash
+# Ver uso
+df -h
+
+# Limpar logs antigos
+docker compose logs --tail=100 > /dev/null
+
+# Limpar imagens não usadas
+docker image prune -a
+
+# Limpar volumes órfãos (CUIDADO!)
+docker volume prune
+```
+
+---
+
+## 📞 Suporte e Recursos
+
+### Documentação Adicional
+
+- **Setup Wizard:** `scripts/SETUP-WIZARD-GUIDE.md`
+- **Deploy Geral:** `instructions/DEPLOY.md`
+- **Dev Workflow:** `instructions/DEV-WORKFLOW.md`
+- **Atualizações:** `instructions/UPDATES.md`
+
+### Links Úteis
+
+- Docker: https://docs.docker.com/
+- Grafana: https://grafana.com/docs/
+- InfluxDB: https://docs.influxdata.com/
+- Mosquitto: https://mosquitto.org/documentation/
+- Let's Encrypt: https://letsencrypt.org/
+
+---
+
+## ✨ Parabéns!
+
+Sua plataforma MOV está rodando em produção na Hostinger! 🎉
+
+**Próximos passos recomendados:**
+
+1. ✅ Configurar alertas no Grafana
+2. ✅ Conectar dispositivos IoT
+3. ✅ Criar dashboards personalizados
+4. ✅ Configurar backup remoto
+5. ✅ Documentar sua instalação específica
+
+---
+
+**Documento atualizado:** Fevereiro 2026  
+**Versão MOV Platform:** v3.0

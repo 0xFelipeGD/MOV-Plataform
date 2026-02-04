@@ -13,44 +13,53 @@ echo ""
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+print_success() { echo -e "${GREEN}✅${NC} $1"; }
+print_error() { echo -e "${RED}❌${NC} $1"; }
+print_warning() { echo -e "${YELLOW}⚠️${NC} $1"; }
+print_info() { echo -e "${BLUE}ℹ${NC} $1"; }
 
 # Verificações iniciais
-echo -e "${YELLOW}[1/7] Verificando pré-requisitos...${NC}"
+echo "[1/6] Verificando pré-requisitos..."
 
 if ! command -v docker &> /dev/null; then
-    echo -e "${RED}❌ Docker não está instalado!${NC}"
+    print_error "Docker não está instalado!"
     echo "Instale com: curl -fsSL https://get.docker.com | sh"
     exit 1
 fi
 
 if ! command -v docker compose &> /dev/null; then
-    echo -e "${RED}❌ Docker Compose não está instalado!${NC}"
+    print_error "Docker Compose não está instalado!"
     exit 1
 fi
 
-echo -e "${GREEN}✅ Docker e Docker Compose OK${NC}"
+print_success "Docker e Docker Compose OK"
 echo ""
 
 # Verificar arquivo .env
-echo -e "${YELLOW}[2/7] Verificando credenciais...${NC}"
+echo "[2/6] Verificando credenciais..."
 
 if [ ! -f .env ]; then
-    echo -e "${RED}❌ Arquivo .env não encontrado!${NC}"
+    print_error "Arquivo .env não encontrado!"
     echo ""
-    echo "Execute primeiro:"
+    echo "Execute primeiro o setup wizard:"
+    echo "  bash scripts/setup_wizard.sh"
+    echo ""
+    echo "Ou execute o setup básico:"
     echo "  bash scripts/setup.sh"
     echo ""
     exit 1
 fi
 
-echo -e "${GREEN}✅ Arquivo .env encontrado${NC}"
+print_success "Arquivo .env encontrado"
 echo ""
 
 # Parar containers existentes
-echo -e "${YELLOW}[3/7] Parando containers antigos...${NC}"
+echo "[3/6] Parando containers antigos..."
 docker compose down 2>/dev/null || true
-echo -e "${GREEN}✅ Containers parados${NC}"
+print_success "Containers parados"
 echo ""
 
 # Verificar certificados SSL para Mosquitto
@@ -115,29 +124,58 @@ fi
 echo ""
 
 # Corrigir permissões
-echo -e "${YELLOW}[6/8] Corrigindo permissões dos diretórios...${NC}"
-if [ -f scripts/fix_permissions.sh ]; then
-    bash scripts/fix_permissions.sh
-    echo -e "${GREEN}✅ Permissões corrigidas${NC}"
-else
-    echo -e "${YELLOW}⚠️  Script fix_permissions.sh não encontrado, ajustando manualmente...${NC}"
-    # Mosquitto precisa de UID 1883
-    sudo chown -R 1883:1883 mosquitto/config mosquitto/data mosquitto/log 2>/dev/null || true
-    sudo chown -R 1883:1883 mosquitto/certs 2>/dev/null || true
-    echo -e "${GREEN}✅ Permissões ajustadas${NC}"
+echo "[6/6] Corrigindo permissões dos diretórios..."
+
+# Função inline para configurar permissões
+configure_permissions() {
+    local path="$1"
+    local uid="$2"
+    local gid="$3"
+    
+    if [ -d "$path" ]; then
+        if command -v sudo &> /dev/null; then
+            sudo chown -R "$uid:$gid" "$path" 2>/dev/null || true
+            sudo chmod -R 755 "$path" 2>/dev/null || true
+        else
+            chown -R "$uid:$gid" "$path" 2>/dev/null || true
+            chmod -R 755 "$path" 2>/dev/null || true
+        fi
+    fi
+}
+
+# Mosquitto precisa de UID 1883
+configure_permissions "mosquitto/config" "1883" "1883"
+configure_permissions "mosquitto/data" "1883" "1883"
+configure_permissions "mosquitto/log" "1883" "1883"
+configure_permissions "mosquitto/certs" "1883" "1883"
+
+# Certificados com permissões especiais
+if [ -d "mosquitto/certs" ]; then
+    chmod 600 mosquitto/certs/*.key 2>/dev/null || true
+    chmod 644 mosquitto/certs/*.crt 2>/dev/null || true
 fi
+
+# InfluxDB precisa de UID 1000
+configure_permissions "influxdb" "1000" "1000"
+
+# Grafana precisa de UID 472
+if [ -d "grafana" ]; then
+    configure_permissions "grafana" "472" "472"
+fi
+
+print_success "Permissões configuradas"
 echo ""
 
 # Iniciar em modo produção
-echo -e "${YELLOW}[7/8] Iniciando containers em modo PRODUÇÃO...${NC}"
+echo "[7/7] Iniciando containers em modo PRODUÇÃO..."
 echo ""
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 echo ""
-echo -e "${GREEN}✅ Containers iniciados${NC}"
+print_success "Containers iniciados"
 echo ""
 
 # Aguardar serviços ficarem prontos
-echo -e "${YELLOW}[8/8] Aguardando serviços ficarem prontos...${NC}"
+echo "[8/8] Aguardando serviços ficarem prontos..."
 sleep 5
 
 # Verificar status

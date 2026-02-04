@@ -6,33 +6,79 @@ Guias completos para desenvolvimento, deploy, operação e manutenção da plata
 
 ## 📋 Índice de Guias
 
-| Guia                                                                        | Descrição                          | Quando Usar                                |
-| --------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------ |
-| **[../scripts/SETUP-WIZARD-GUIDE.md](../scripts/SETUP-WIZARD-GUIDE.md)** ⭐ | Setup Wizard Interativo            | **Primeira vez** - configuração guiada     |
-| **[DEPLOY.md](DEPLOY.md)**                                                  | Deploy completo em VPS (produção)  | Primeira vez subindo para produção         |
-| **[DEV-WORKFLOW.md](DEV-WORKFLOW.md)**                                      | Workflow de desenvolvimento local  | Começar a desenvolver, trabalhar em equipe |
-| **[UPDATES.md](UPDATES.md)**                                                | Atualizar código e containers      | Aplicar mudanças em dev ou produção        |
-| **[MQTT-CERT-RENEWAL.md](MQTT-CERT-RENEWAL.md)**                            | Gerenciamento de certificados MQTT | Troubleshooting de certificados            |
+| Guia                                             | Descrição             | Quando Usar                          |
+| ------------------------------------------------ | --------------------- | ------------------------------------ |
+| **[DEPLOY.md](DEPLOY.md)** ⭐                    | **Deploy VPS Ubuntu** | **PRODUÇÃO** - Guia único definitivo |
+| **[DEV-WORKFLOW.md](DEV-WORKFLOW.md)**           | Desenvolvimento local | Trabalhar localmente                 |
+| **[UPDATES.md](UPDATES.md)**                     | Atualizar plataforma  | Aplicar mudanças                     |
+| **[MQTT-CERT-RENEWAL.md](MQTT-CERT-RENEWAL.md)** | Certificados MQTT     | Troubleshooting SSL                  |
+
+**Scripts:**
+
+- **Setup Wizard:** `bash scripts/setup_wizard.sh` (configuração interativa)
+- **Deploy:** `bash scripts/deploy.sh` (deploy em produção)
+- Ver guia completo: [../scripts/SETUP-WIZARD-GUIDE.md](../scripts/SETUP-WIZARD-GUIDE.md)
 
 ---
 
-## 🚀 Guia Rápido por Cenário
+## 🚀 Início Rápido por Cenário
 
-### 🆕 Sou Novo no Projeto
+### 🆕 Primeira Vez - Desenvolvimento Local
 
-**Desenvolvimento Local:**
+```bash
+# 1. Configurar ambiente
+bash scripts/setup_wizard.sh
+# Escolha: Development
 
-1. Leia [DEV-WORKFLOW.md](DEV-WORKFLOW.md) - SETUP INICIAL
-2. Execute: `bash scripts/setup.sh && docker compose up -d`
-3. Acesse: http://localhost:3000 (Grafana)
+# 2. Iniciar plataforma
+docker compose up -d
 
-**Deploy em Produção:**
+# 3. Acessar
+# Grafana: http://localhost:3000
+```
 
-1. Leia [DEPLOY.md](DEPLOY.md) - do início ao fim
-2. Execute: `bash scripts/deploy.sh`
-3. Configure SSL: `sudo bash scripts/setup_ssl.sh seudominio.com`
-4. Configure firewall: `sudo bash scripts/setup_firewall.sh`
-5. Configure backup remoto (opcional): `bash scripts/setup_remote_backup.sh`
+Guia detalhado: [DEV-WORKFLOW.md](DEV-WORKFLOW.md)
+
+---
+
+### 🚀 Deploy em Produção - VPS Hostinger
+
+```bash
+# 1. Conectar na VPS
+ssh root@SEU_IP_VPS
+
+# 2. Instalar Docker
+curl -fsSL https://get.docker.com | sh
+
+# 3. Clonar projeto
+git clone <repo> && cd MOV-Plataform
+
+# 4. Configurar (wizard interativo)
+bash scripts/setup_wizard.sh
+# Escolha: Production
+
+# 5. Deploy
+bash scripts/deploy.sh
+
+# 6. Configurar firewall
+bash scripts/setup_firewall.sh
+
+# 7. SSL (se tiver domínio)
+bash scripts/setup_ssl.sh seudominio.com
+```
+
+**Guia completo:** [DEPLOY.md](DEPLOY.md) ⭐
+
+---
+
+### 🔄 Atualizar Código em Produção
+
+````bash
+# 1. Backup primeiro!
+bash scripts/backup.sh
+
+# 2. Atualizar
+bash scripts/update.sh
 
 ---
 
@@ -67,7 +113,7 @@ docker compose ps
 
 # Recriar completamente
 docker compose down && docker compose up -d
-```
+````
 
 **Certificados MQTT expirados:**
 
