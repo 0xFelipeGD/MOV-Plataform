@@ -44,6 +44,10 @@ ssh root@203.45.67.89
 # Primeira vez: digite "yes" para aceitar fingerprint
 ```
 
+✅ **Conectado!** Você verá algo como: `root@vps-123456:~#`
+
+---
+
 ### Comando Rápido (1.3 + 2.1 + 2.3 + 3.1)
 
 **Para setup completo em um único comando:**
@@ -60,8 +64,6 @@ apt update && apt upgrade -y && apt install -y curl git ufw htop nano && curl -f
 - ✅ Configura firewall completo (3.1)
 
 ---
-
-✅ **Conectado!** Você verá algo como: `root@vps-123456:~#`
 
 ### 1.3. Atualizar Sistema
 
