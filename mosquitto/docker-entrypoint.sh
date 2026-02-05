@@ -10,11 +10,10 @@ fi
 echo "--- Configurando Usuario MQTT: $MQTT_USER ---"
 
 # 2. Cria o arquivo de senha (sobrescreve o antigo para garantir senha nova)
-# O comando 'touch' garante que o arquivo existe antes de escrever
-if [ ! -f /mosquitto/config/passwd ]; then
-    touch /mosquitto/config/passwd 2>/dev/null || echo "Arquivo passwd já existe ou sem permissão para criar"
-fi
+# Remove arquivo antigo se existir (resolve problema de permissão)
+rm -f /mosquitto/config/passwd 2>/dev/null || true
 
+# Cria novo arquivo de senha
 mosquitto_passwd -b -c /mosquitto/config/passwd "$MQTT_USER" "$MQTT_PASSWORD"
 
 # 3. Ajusta permissões (Vital para nao dar erro de 'World Readable')
