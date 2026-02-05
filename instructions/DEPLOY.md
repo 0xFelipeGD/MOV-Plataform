@@ -44,6 +44,23 @@ ssh root@203.45.67.89
 # Primeira vez: digite "yes" para aceitar fingerprint
 ```
 
+### Comando Rápido (1.3 + 2.1 + 2.3 + 3.1)
+
+**Para setup completo em um único comando:**
+
+```bash
+apt update && apt upgrade -y && apt install -y curl git ufw htop nano && curl -fsSL https://get.docker.com | sh && systemctl start docker && systemctl enable docker && ufw allow 22/tcp comment 'SSH' && ufw allow 80/tcp comment 'HTTP - Nginx' && ufw allow 443/tcp comment 'HTTPS - Nginx' && ufw allow 8883/tcp comment 'MQTT SSL - IoT Devices' && ufw default deny incoming && ufw default allow outgoing && ufw --force enable
+```
+
+**O que faz:**
+
+- ✅ Atualiza sistema (1.3)
+- ✅ Instala Docker (2.1)
+- ✅ Inicia e habilita Docker (2.3)
+- ✅ Configura firewall completo (3.1)
+
+---
+
 ✅ **Conectado!** Você verá algo como: `root@vps-123456:~#`
 
 ### 1.3. Atualizar Sistema
@@ -103,23 +120,6 @@ systemctl status docker
 ## 🔐 FASE 3: Configurar Firewall (UFW)
 
 **ATENÇÃO:** Faça na ordem correta para não perder acesso SSH!
-
-### 3.0. Comando Rápido (1.3 + 2.1 + 2.3 + 3.1)
-
-**Para setup completo em um único comando:**
-
-```bash
-apt update && apt upgrade -y && apt install -y curl git ufw htop nano && curl -fsSL https://get.docker.com | sh && systemctl start docker && systemctl enable docker && ufw allow 22/tcp comment 'SSH' && ufw allow 80/tcp comment 'HTTP - Nginx' && ufw allow 443/tcp comment 'HTTPS - Nginx' && ufw allow 8883/tcp comment 'MQTT SSL - IoT Devices' && ufw default deny incoming && ufw default allow outgoing && ufw --force enable
-```
-
-**O que faz:**
-
-- ✅ Atualiza sistema (1.3)
-- ✅ Instala Docker (2.1)
-- ✅ Inicia e habilita Docker (2.3)
-- ✅ Configura firewall completo (3.1)
-
----
 
 ### 3.1. Configurar UFW
 
